@@ -1,0 +1,1161 @@
+{
+    "role": "local_aggregator",
+    "aggregator_token": "c30237cc8976ee7505aa8a23",
+    "sample_FL_program_hash": "92b165dd99dfca6d4571355c893a0c3c7534e88b",
+    "sample_domain_verification_program_hash": "c981b1536bd9f3c24ad87f54a21e5eb541c8b3f4",
+    "aggregator_ip": "172.25.218.12",
+    "aggregator_port": 20004,
+    "aggregator_key_path": "client4.key",
+    "aggregator_cert_path": "client4.crt",
+    "aggregator_pem_path": "client4.pem",
+    "training_model_batch_size": 64,
+    "training_model_epochs": 36,
+    "training_learning_rate": 0.0001,
+    "fl_training_round": 3,
+    "fl_training_model": "ntc_mlp",
+    "verify_domain_verification_program": "False",
+    "verify_both_dataset": "False",
+    "boost_hrf_aggregation": "False",
+    "boost_hrf_epochs": 1,
+    "training_alpha_value": 0,
+    "backdoor_pattern_threshold": 5000,
+    "possible_gan_threshold": 2,
+    "client_list": {
+        "client4": {
+            "ap": {
+                "data_type": "Client_Attestation_Parameters",
+                "client_id": "client4",
+                "client_domain": "B",
+                "client_host": "flntc",
+                "test_model_file": "",
+                "test_model_name": "testModel_client4.h5",
+                "FL_program_sha256": "92b165dd99dfca6d4571355c893a0c3c7534e88b",
+                "attestation_program_sha256": "9868cc16da1e3a452d00d9f45680a14112c6af6c",
+                "local_dataset_x_train_sha256": "e7f157c84c7e5a2d8755e8ef12a80bf6953a7f5a",
+                "local_dataset_y_train_sha256": "f5a6a68f06f1ccbfcd124575843f1b90658805b4",
+                "local_dataset_x_test_sha256": "a7ac938f5af50621f6897a7febca332b8ec536c8",
+                "local_dataset_y_test_sha256": "015df01c7f47234817c429543dfb9b8a6dd8f7b6",
+                "client_cert_sha256": "9a6a43657556ef0f82caa8a41cae1ab65357aec3",
+                "verification_list": {
+                    "data_type": "Client_Verification_List",
+                    "client_id": "client4",
+                    "client_domain": "B",
+                    "process_list": [
+                        {
+                            "USER": "root",
+                            "PID": "1",
+                            "COMMAND": "/sbin/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "2",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "9",
+                            "COMMAND": "plan9 --control-socket 6 --log-level 4 --server-fd 7 --pipe-fd 9 --log-truncate"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "60",
+                            "COMMAND": "/lib/systemd/systemd-journald"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "83",
+                            "COMMAND": "/lib/systemd/systemd-udevd"
+                        },
+                        {
+                            "USER": "systemd+",
+                            "PID": "119",
+                            "COMMAND": "/lib/systemd/systemd-networkd"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "258",
+                            "COMMAND": "snapfuse /var/lib/snapd/snaps/core20_1891.snap /snap/core20/1891 -o ro,nodev,allow_other,suid"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "259",
+                            "COMMAND": "snapfuse /var/lib/snapd/snaps/core20_2318.snap /snap/core20/2318 -o ro,nodev,allow_other,suid"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "261",
+                            "COMMAND": "snapfuse /var/lib/snapd/snaps/lxd_24061.snap /snap/lxd/24061 -o ro,nodev,allow_other,suid"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "266",
+                            "COMMAND": "snapfuse /var/lib/snapd/snaps/snapd_19122.snap /snap/snapd/19122 -o ro,nodev,allow_other,suid"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "267",
+                            "COMMAND": "snapfuse /var/lib/snapd/snaps/snapd_21759.snap /snap/snapd/21759 -o ro,nodev,allow_other,suid"
+                        },
+                        {
+                            "USER": "systemd+",
+                            "PID": "274",
+                            "COMMAND": "/lib/systemd/systemd-resolved"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "277",
+                            "COMMAND": "/usr/lib/accountsservice/accounts-daemon"
+                        },
+                        {
+                            "USER": "message+",
+                            "PID": "278",
+                            "COMMAND": "/usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "282",
+                            "COMMAND": "/usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "284",
+                            "COMMAND": "/usr/lib/policykit-1/polkitd --no-debug"
+                        },
+                        {
+                            "USER": "syslog",
+                            "PID": "285",
+                            "COMMAND": "/usr/sbin/rsyslogd -n -iNONE"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "288",
+                            "COMMAND": "/usr/lib/snapd/snapd"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "289",
+                            "COMMAND": "/lib/systemd/systemd-logind"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "290",
+                            "COMMAND": "/usr/lib/udisks2/udisksd"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "313",
+                            "COMMAND": "/usr/sbin/ModemManager"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "347",
+                            "COMMAND": "/usr/sbin/cron -f"
+                        },
+                        {
+                            "USER": "daemon",
+                            "PID": "351",
+                            "COMMAND": "/usr/sbin/atd -f"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "367",
+                            "COMMAND": "/usr/bin/python3 /usr/share/unattended-upgrades/unattended-upgrade-shutdown --wait-for-signal"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "378",
+                            "COMMAND": "/sbin/agetty -o -p -- \\u --noclear --keep-baud console 115200,38400,9600 vt220"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "382",
+                            "COMMAND": "/sbin/agetty -o -p -- \\u --noclear tty1 linux"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "384",
+                            "COMMAND": "/usr/local/bin/tpm_server"
+                        },
+                        {
+                            "USER": "tss",
+                            "PID": "385",
+                            "COMMAND": "/usr/local/sbin/tpm2-abrmd --tcti=libtss2-tcti-mssim.so.0:host=127.0.0.1,port=2321"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "565",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "566",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "567",
+                            "COMMAND": "-bash"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "568",
+                            "COMMAND": "/bin/login -f"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "743",
+                            "COMMAND": "/lib/systemd/systemd --user"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "744",
+                            "COMMAND": "(sd-pam)"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "750",
+                            "COMMAND": "-bash"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "829",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "830",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "832",
+                            "COMMAND": "-bash"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "869",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "870",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "873",
+                            "COMMAND": "-bash"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "2919",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "2920",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "2921",
+                            "COMMAND": "-bash"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "8515",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "8516",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "8519",
+                            "COMMAND": "-bash"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "8602",
+                            "COMMAND": "python3 global_server_attestator.py"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "8619",
+                            "COMMAND": "python3 remote_attestation_client1.py"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "8651",
+                            "COMMAND": "python3 remote_attestation_client2.py"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "8713",
+                            "COMMAND": "python3 remote_attestation_client3.py"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "8747",
+                            "COMMAND": "python3 remote_attestation_client4.py"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "9159",
+                            "COMMAND": "ps aux"
+                        }
+                    ],
+                    "port_list": [
+                        {
+                            "PROTO": "tcp",
+                            "LOCAL_ADDRESS": "0.0.0.0:2322",
+                            "FOREIGN_ADDRESS": "0.0.0.0:*",
+                            "STATE": "LISTEN",
+                            "PID/PROGRAM": "-"
+                        },
+                        {
+                            "PROTO": "tcp",
+                            "LOCAL_ADDRESS": "0.0.0.0:2321",
+                            "FOREIGN_ADDRESS": "0.0.0.0:*",
+                            "STATE": "LISTEN",
+                            "PID/PROGRAM": "-"
+                        },
+                        {
+                            "PROTO": "tcp",
+                            "LOCAL_ADDRESS": "10.255.255.254:53",
+                            "FOREIGN_ADDRESS": "0.0.0.0:*",
+                            "STATE": "LISTEN",
+                            "PID/PROGRAM": "-"
+                        },
+                        {
+                            "PROTO": "tcp",
+                            "LOCAL_ADDRESS": "127.0.0.53:53",
+                            "FOREIGN_ADDRESS": "0.0.0.0:*",
+                            "STATE": "LISTEN",
+                            "PID/PROGRAM": "-"
+                        },
+                        {
+                            "PROTO": "tcp",
+                            "LOCAL_ADDRESS": "172.21.134.166:11111",
+                            "FOREIGN_ADDRESS": "0.0.0.0:*",
+                            "STATE": "LISTEN",
+                            "PID/PROGRAM": "8602/python3"
+                        },
+                        {
+                            "PROTO": "tcp6",
+                            "LOCAL_ADDRESS": ":::2322",
+                            "FOREIGN_ADDRESS": ":::*",
+                            "STATE": "LISTEN",
+                            "PID/PROGRAM": "-"
+                        },
+                        {
+                            "PROTO": "tcp6",
+                            "LOCAL_ADDRESS": ":::2321",
+                            "FOREIGN_ADDRESS": ":::*",
+                            "STATE": "LISTEN",
+                            "PID/PROGRAM": "-"
+                        }
+                    ]
+                },
+                "verification_list_sha256": "f5be25da2821c0f9ac5fbc0a50c500fb91e73f82"
+            },
+            "test_model_accuracy": 0.8337421424244531,
+            "process_count": 53,
+            "port_count": 7,
+            "trust_score": 30,
+            "status": "local_aggregator",
+            "client_ip": "172.25.218.12",
+            "client_port": 20004,
+            "client_host": "flntc",
+            "aggregator_token": "c30237cc8976ee7505aa8a23"
+        },
+        "client5": {
+            "ap": {
+                "data_type": "Client_Attestation_Parameters",
+                "client_id": "client5",
+                "client_domain": "B",
+                "client_host": "flntc",
+                "test_model_file": "",
+                "test_model_name": "testModel_client5.h5",
+                "FL_program_sha256": "92b165dd99dfca6d4571355c893a0c3c7534e88b",
+                "attestation_program_sha256": "9868cc16da1e3a452d00d9f45680a14112c6af6c",
+                "local_dataset_x_train_sha256": "27161b61ddf19baaeb59b0344065948d35e690b1",
+                "local_dataset_y_train_sha256": "a31fbd4aa9882e74317731e8f0aead6f208b68be",
+                "local_dataset_x_test_sha256": "df52f0e4b69588c05a3b66ef7b9c64bab756a287",
+                "local_dataset_y_test_sha256": "3784f11c710c6893c32dccf9c8f218932b208aa3",
+                "client_cert_sha256": "08a036d1c06fae552ba23646f7a80735869b62a3",
+                "verification_list": {
+                    "data_type": "Client_Verification_List",
+                    "client_id": "client5",
+                    "client_domain": "B",
+                    "process_list": [
+                        {
+                            "USER": "root",
+                            "PID": "1",
+                            "COMMAND": "/sbin/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "2",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "7",
+                            "COMMAND": "plan9 --control-socket 6 --log-level 4 --server-fd 7 --pipe-fd 9 --log-truncate"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "52",
+                            "COMMAND": "/lib/systemd/systemd-journald"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "73",
+                            "COMMAND": "/lib/systemd/systemd-udevd"
+                        },
+                        {
+                            "USER": "systemd+",
+                            "PID": "83",
+                            "COMMAND": "/lib/systemd/systemd-networkd"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "262",
+                            "COMMAND": "snapfuse /var/lib/snapd/snaps/core20_2318.snap /snap/core20/2318 -o ro,nodev,allow_other,suid"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "263",
+                            "COMMAND": "snapfuse /var/lib/snapd/snaps/core20_1891.snap /snap/core20/1891 -o ro,nodev,allow_other,suid"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "265",
+                            "COMMAND": "snapfuse /var/lib/snapd/snaps/lxd_24061.snap /snap/lxd/24061 -o ro,nodev,allow_other,suid"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "268",
+                            "COMMAND": "snapfuse /var/lib/snapd/snaps/snapd_19122.snap /snap/snapd/19122 -o ro,nodev,allow_other,suid"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "269",
+                            "COMMAND": "snapfuse /var/lib/snapd/snaps/snapd_21759.snap /snap/snapd/21759 -o ro,nodev,allow_other,suid"
+                        },
+                        {
+                            "USER": "systemd+",
+                            "PID": "276",
+                            "COMMAND": "/lib/systemd/systemd-resolved"
+                        },
+                        {
+                            "USER": "message+",
+                            "PID": "280",
+                            "COMMAND": "/usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "283",
+                            "COMMAND": "/usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "285",
+                            "COMMAND": "/usr/lib/policykit-1/polkitd --no-debug"
+                        },
+                        {
+                            "USER": "syslog",
+                            "PID": "287",
+                            "COMMAND": "/usr/sbin/rsyslogd -n -iNONE"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "291",
+                            "COMMAND": "/lib/systemd/systemd-logind"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "292",
+                            "COMMAND": "/usr/lib/udisks2/udisksd"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "310",
+                            "COMMAND": "/usr/sbin/ModemManager"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "342",
+                            "COMMAND": "/usr/sbin/cron -f"
+                        },
+                        {
+                            "USER": "daemon",
+                            "PID": "346",
+                            "COMMAND": "/usr/sbin/atd -f"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "365",
+                            "COMMAND": "/usr/bin/python3 /usr/share/unattended-upgrades/unattended-upgrade-shutdown --wait-for-signal"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "373",
+                            "COMMAND": "/sbin/agetty -o -p -- \\u --noclear --keep-baud console 115200,38400,9600 vt220"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "376",
+                            "COMMAND": "/sbin/agetty -o -p -- \\u --noclear tty1 linux"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "377",
+                            "COMMAND": "/usr/local/bin/tpm_server"
+                        },
+                        {
+                            "USER": "tss",
+                            "PID": "378",
+                            "COMMAND": "/usr/local/sbin/tpm2-abrmd --tcti=libtss2-tcti-mssim.so.0:host=127.0.0.1,port=2321"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "539",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "540",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "541",
+                            "COMMAND": "-bash"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "542",
+                            "COMMAND": "/bin/login -f"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "674",
+                            "COMMAND": "/lib/systemd/systemd --user"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "675",
+                            "COMMAND": "(sd-pam)"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "680",
+                            "COMMAND": "-bash"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "736",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "737",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "741",
+                            "COMMAND": "-bash"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "765",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "766",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "767",
+                            "COMMAND": "-bash"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "791",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "792",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "794",
+                            "COMMAND": "-bash"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "818",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "819",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "820",
+                            "COMMAND": "-bash"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "31492",
+                            "COMMAND": "/usr/lib/snapd/snapd"
+                        },
+                        {
+                            "USER": "uuidd",
+                            "PID": "39998",
+                            "COMMAND": "/usr/sbin/uuidd --socket-activation"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "40840",
+                            "COMMAND": "/usr/lib/accountsservice/accounts-daemon"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "126918",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "126919",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "126921",
+                            "COMMAND": "-bash"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "127016",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "127017",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "127019",
+                            "COMMAND": "-bash"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "127072",
+                            "COMMAND": "python3 global_server_attestator.py"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "127107",
+                            "COMMAND": "python3 remote_attestation_client1.py"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "127131",
+                            "COMMAND": "python3 remote_attestation_client2.py"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "127171",
+                            "COMMAND": "python3 remote_attestation_client3.py"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "127211",
+                            "COMMAND": "python3 remote_attestation_client4.py"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "127253",
+                            "COMMAND": "python3 remote_attestation_client5.py"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "128633",
+                            "COMMAND": "ps aux"
+                        }
+                    ],
+                    "port_list": [
+                        {
+                            "PROTO": "tcp",
+                            "LOCAL_ADDRESS": "10.255.255.254:53",
+                            "FOREIGN_ADDRESS": "0.0.0.0:*",
+                            "STATE": "LISTEN",
+                            "PID/PROGRAM": "-"
+                        },
+                        {
+                            "PROTO": "tcp",
+                            "LOCAL_ADDRESS": "0.0.0.0:2322",
+                            "FOREIGN_ADDRESS": "0.0.0.0:*",
+                            "STATE": "LISTEN",
+                            "PID/PROGRAM": "-"
+                        },
+                        {
+                            "PROTO": "tcp",
+                            "LOCAL_ADDRESS": "0.0.0.0:2321",
+                            "FOREIGN_ADDRESS": "0.0.0.0:*",
+                            "STATE": "LISTEN",
+                            "PID/PROGRAM": "-"
+                        },
+                        {
+                            "PROTO": "tcp",
+                            "LOCAL_ADDRESS": "172.25.218.12:11111",
+                            "FOREIGN_ADDRESS": "0.0.0.0:*",
+                            "STATE": "LISTEN",
+                            "PID/PROGRAM": "127072/python3"
+                        },
+                        {
+                            "PROTO": "tcp",
+                            "LOCAL_ADDRESS": "127.0.0.53:53",
+                            "FOREIGN_ADDRESS": "0.0.0.0:*",
+                            "STATE": "LISTEN",
+                            "PID/PROGRAM": "-"
+                        },
+                        {
+                            "PROTO": "tcp6",
+                            "LOCAL_ADDRESS": ":::2322",
+                            "FOREIGN_ADDRESS": ":::*",
+                            "STATE": "LISTEN",
+                            "PID/PROGRAM": "-"
+                        },
+                        {
+                            "PROTO": "tcp6",
+                            "LOCAL_ADDRESS": ":::2321",
+                            "FOREIGN_ADDRESS": ":::*",
+                            "STATE": "LISTEN",
+                            "PID/PROGRAM": "-"
+                        }
+                    ]
+                },
+                "verification_list_sha256": "b095bc76f347c3b185d76da88968faa39f84f3f5"
+            },
+            "test_model_accuracy": 0.5424681476479409,
+            "process_count": 61,
+            "port_count": 7,
+            "trust_score": 15,
+            "status": "verified_edge_client",
+            "client_ip": "172.25.218.12",
+            "client_port": 20005,
+            "client_host": "flntc",
+            "node_verification_token": "a7a8b8d5911a6b821359"
+        },
+        "client6": {
+            "ap": {
+                "data_type": "Client_Attestation_Parameters",
+                "client_id": "client6",
+                "client_domain": "B",
+                "client_host": "flntc",
+                "test_model_file": "",
+                "test_model_name": "testModel_client6.h5",
+                "FL_program_sha256": "92b165dd99dfca6d4571355c893a0c3c7534e88b",
+                "attestation_program_sha256": "9868cc16da1e3a452d00d9f45680a14112c6af6c",
+                "local_dataset_x_train_sha256": "47e4e53c4dd2a713ebcb3908cd13c000edb2beb1",
+                "local_dataset_y_train_sha256": "7656f026a20a1582416ae8d306c5eea10c8ff485",
+                "local_dataset_x_test_sha256": "ae543ff3472ad98ca02bfe45407d19b7c9314f91",
+                "local_dataset_y_test_sha256": "67cb30fb063b8f562b9ade0f2af4110f2180fdef",
+                "client_cert_sha256": "b3bad82afe32328d007655267fb2e9428ed34369",
+                "verification_list": {
+                    "data_type": "Client_Verification_List",
+                    "client_id": "client6",
+                    "client_domain": "B",
+                    "process_list": [
+                        {
+                            "USER": "root",
+                            "PID": "1",
+                            "COMMAND": "/sbin/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "2",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "7",
+                            "COMMAND": "plan9 --control-socket 6 --log-level 4 --server-fd 7 --pipe-fd 9 --log-truncate"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "52",
+                            "COMMAND": "/lib/systemd/systemd-journald"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "73",
+                            "COMMAND": "/lib/systemd/systemd-udevd"
+                        },
+                        {
+                            "USER": "systemd+",
+                            "PID": "83",
+                            "COMMAND": "/lib/systemd/systemd-networkd"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "262",
+                            "COMMAND": "snapfuse /var/lib/snapd/snaps/core20_2318.snap /snap/core20/2318 -o ro,nodev,allow_other,suid"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "263",
+                            "COMMAND": "snapfuse /var/lib/snapd/snaps/core20_1891.snap /snap/core20/1891 -o ro,nodev,allow_other,suid"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "265",
+                            "COMMAND": "snapfuse /var/lib/snapd/snaps/lxd_24061.snap /snap/lxd/24061 -o ro,nodev,allow_other,suid"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "268",
+                            "COMMAND": "snapfuse /var/lib/snapd/snaps/snapd_19122.snap /snap/snapd/19122 -o ro,nodev,allow_other,suid"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "269",
+                            "COMMAND": "snapfuse /var/lib/snapd/snaps/snapd_21759.snap /snap/snapd/21759 -o ro,nodev,allow_other,suid"
+                        },
+                        {
+                            "USER": "systemd+",
+                            "PID": "276",
+                            "COMMAND": "/lib/systemd/systemd-resolved"
+                        },
+                        {
+                            "USER": "message+",
+                            "PID": "280",
+                            "COMMAND": "/usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "283",
+                            "COMMAND": "/usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "285",
+                            "COMMAND": "/usr/lib/policykit-1/polkitd --no-debug"
+                        },
+                        {
+                            "USER": "syslog",
+                            "PID": "287",
+                            "COMMAND": "/usr/sbin/rsyslogd -n -iNONE"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "291",
+                            "COMMAND": "/lib/systemd/systemd-logind"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "292",
+                            "COMMAND": "/usr/lib/udisks2/udisksd"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "310",
+                            "COMMAND": "/usr/sbin/ModemManager"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "342",
+                            "COMMAND": "/usr/sbin/cron -f"
+                        },
+                        {
+                            "USER": "daemon",
+                            "PID": "346",
+                            "COMMAND": "/usr/sbin/atd -f"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "365",
+                            "COMMAND": "/usr/bin/python3 /usr/share/unattended-upgrades/unattended-upgrade-shutdown --wait-for-signal"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "373",
+                            "COMMAND": "/sbin/agetty -o -p -- \\u --noclear --keep-baud console 115200,38400,9600 vt220"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "376",
+                            "COMMAND": "/sbin/agetty -o -p -- \\u --noclear tty1 linux"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "377",
+                            "COMMAND": "/usr/local/bin/tpm_server"
+                        },
+                        {
+                            "USER": "tss",
+                            "PID": "378",
+                            "COMMAND": "/usr/local/sbin/tpm2-abrmd --tcti=libtss2-tcti-mssim.so.0:host=127.0.0.1,port=2321"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "539",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "540",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "541",
+                            "COMMAND": "-bash"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "542",
+                            "COMMAND": "/bin/login -f"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "674",
+                            "COMMAND": "/lib/systemd/systemd --user"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "675",
+                            "COMMAND": "(sd-pam)"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "680",
+                            "COMMAND": "-bash"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "736",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "737",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "741",
+                            "COMMAND": "-bash"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "765",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "766",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "767",
+                            "COMMAND": "-bash"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "791",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "792",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "794",
+                            "COMMAND": "-bash"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "818",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "819",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "820",
+                            "COMMAND": "-bash"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "31492",
+                            "COMMAND": "/usr/lib/snapd/snapd"
+                        },
+                        {
+                            "USER": "uuidd",
+                            "PID": "39998",
+                            "COMMAND": "/usr/sbin/uuidd --socket-activation"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "40840",
+                            "COMMAND": "/usr/lib/accountsservice/accounts-daemon"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "126918",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "126919",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "126921",
+                            "COMMAND": "-bash"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "127016",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "root",
+                            "PID": "127017",
+                            "COMMAND": "/init"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "127019",
+                            "COMMAND": "-bash"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "127072",
+                            "COMMAND": "python3 global_server_attestator.py"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "127107",
+                            "COMMAND": "python3 remote_attestation_client1.py"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "127131",
+                            "COMMAND": "python3 remote_attestation_client2.py"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "127171",
+                            "COMMAND": "python3 remote_attestation_client3.py"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "127211",
+                            "COMMAND": "python3 remote_attestation_client4.py"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "127253",
+                            "COMMAND": "python3 remote_attestation_client5.py"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "128809",
+                            "COMMAND": "python3 remote_attestation_client6.py"
+                        },
+                        {
+                            "USER": "mebikar+",
+                            "PID": "130189",
+                            "COMMAND": "ps aux"
+                        }
+                    ],
+                    "port_list": [
+                        {
+                            "PROTO": "tcp",
+                            "LOCAL_ADDRESS": "10.255.255.254:53",
+                            "FOREIGN_ADDRESS": "0.0.0.0:*",
+                            "STATE": "LISTEN",
+                            "PID/PROGRAM": "-"
+                        },
+                        {
+                            "PROTO": "tcp",
+                            "LOCAL_ADDRESS": "0.0.0.0:2322",
+                            "FOREIGN_ADDRESS": "0.0.0.0:*",
+                            "STATE": "LISTEN",
+                            "PID/PROGRAM": "-"
+                        },
+                        {
+                            "PROTO": "tcp",
+                            "LOCAL_ADDRESS": "0.0.0.0:2321",
+                            "FOREIGN_ADDRESS": "0.0.0.0:*",
+                            "STATE": "LISTEN",
+                            "PID/PROGRAM": "-"
+                        },
+                        {
+                            "PROTO": "tcp",
+                            "LOCAL_ADDRESS": "172.25.218.12:11111",
+                            "FOREIGN_ADDRESS": "0.0.0.0:*",
+                            "STATE": "LISTEN",
+                            "PID/PROGRAM": "127072/python3"
+                        },
+                        {
+                            "PROTO": "tcp",
+                            "LOCAL_ADDRESS": "127.0.0.53:53",
+                            "FOREIGN_ADDRESS": "0.0.0.0:*",
+                            "STATE": "LISTEN",
+                            "PID/PROGRAM": "-"
+                        },
+                        {
+                            "PROTO": "tcp6",
+                            "LOCAL_ADDRESS": ":::2322",
+                            "FOREIGN_ADDRESS": ":::*",
+                            "STATE": "LISTEN",
+                            "PID/PROGRAM": "-"
+                        },
+                        {
+                            "PROTO": "tcp6",
+                            "LOCAL_ADDRESS": ":::2321",
+                            "FOREIGN_ADDRESS": ":::*",
+                            "STATE": "LISTEN",
+                            "PID/PROGRAM": "-"
+                        }
+                    ]
+                },
+                "verification_list_sha256": "a8eb59e9d69232840566826467873ed4b725a3e4"
+            },
+            "test_model_accuracy": 0.006583977993823176,
+            "process_count": 62,
+            "port_count": 7,
+            "trust_score": 15,
+            "status": "verified_edge_client",
+            "client_ip": "172.25.218.12",
+            "client_port": 20006,
+            "client_host": "flntc",
+            "node_verification_token": "dc2693f962f111990215"
+        }
+    },
+    "last_domain_model_path": "fed_weighted_Avg_domain_B_model_14082024_124508.h5"
+}

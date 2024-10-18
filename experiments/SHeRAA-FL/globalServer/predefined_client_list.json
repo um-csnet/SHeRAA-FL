@@ -1,0 +1,51 @@
+{
+	"client1": {
+        "client_domain": "A",
+		"client_ip": "172.25.218.12",
+		"client_source_port": 20001,
+		"token": "OPTIONAL",
+		"test_model_accuracy": "",
+		"client_cert_path": "client1.crt"
+    },
+	"client2": {
+        "client_domain": "A",
+		"client_ip": "172.25.218.12",
+		"client_source_port": 20002,
+		"token": "OPTIONAL",
+		"test_model_accuracy": "",
+		"client_cert_path": "client2.crt"
+    },
+	"client3": {
+        "client_domain": "A",
+		"client_ip": "172.25.218.12",
+		"client_source_port": 20003,
+		"token": "OPTIONAL",
+		"test_model_accuracy": "",
+		"client_cert_path": "client3.crt"
+    },
+	"client4": {
+        "client_domain": "B",
+		"client_ip": "172.25.218.12",
+		"client_source_port": 20004,
+		"token": "OPTIONAL",
+		"test_model_accuracy": "",
+		"client_cert_path": "client4.crt"
+    },
+	"client5": {
+        "client_domain": "B",
+		"client_ip": "172.25.218.12",
+		"client_source_port": 20005,
+		"token": "OPTIONAL",
+		"test_model_accuracy": "",
+		"client_cert_path": "client5.crt"
+    },
+	"client6": {
+        "client_domain": "B",
+		"client_ip": "172.25.218.12",
+		"client_source_port": 20006,
+		"token": "OPTIONAL",
+		"test_model_accuracy": "",
+		"client_cert_path": "client6.crt"
+    }
+	
+}
