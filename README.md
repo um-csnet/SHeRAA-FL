@@ -1,5 +1,5 @@
 # SHeRAA-FL Framework
-Paper- SHeRAA-FL: Secure Hierarchical Remote Attestation with Adaptive Aggregation Federated Learning Framework for Network Traffic Classification
+Paper- Mitigating Adversarial Attacks in Federated Learning Based Network Traffic Classification Applications using Secure Hierarchical Remote Attestation and Adaptive Aggregation Framework
 
 # Deployed on:
 ## Hosts
