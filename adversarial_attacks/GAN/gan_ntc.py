@@ -31,15 +31,15 @@ def make_generator_model(input_dim, output_dim):
 '''
 def make_generator_model(input_dim, output_dim):
     model = tf.keras.Sequential()
-    model.add(layers.Dense(128, use_bias=False, input_shape=(input_dim,)))
-    model.add(layers.BatchNormalization())
-    model.add(layers.LeakyReLU())
-    
-    model.add(layers.Dense(256))
+    model.add(layers.Dense(256, use_bias=False, input_shape=(input_dim,)))
     model.add(layers.BatchNormalization())
     model.add(layers.LeakyReLU())
     
     model.add(layers.Dense(512))
+    model.add(layers.BatchNormalization())
+    model.add(layers.LeakyReLU())
+    
+    model.add(layers.Dense(1024))
     model.add(layers.BatchNormalization())
     model.add(layers.LeakyReLU())
 
@@ -63,15 +63,15 @@ def make_discriminator_model(input_dim):
 # Discriminator Model
 def make_discriminator_model(input_dim):
     model = tf.keras.Sequential()
-    model.add(layers.Dense(128, input_shape=(input_dim,)))
+    model.add(layers.Dense(256, input_shape=(input_dim,)))
     model.add(layers.LeakyReLU())
     model.add(layers.Dropout(0.3))
 
-    model.add(layers.Dense(256))
+    model.add(layers.Dense(512))
     model.add(layers.LeakyReLU())
     model.add(layers.Dropout(0.3))
     
-    model.add(layers.Dense(512))
+    model.add(layers.Dense(1024))
     model.add(layers.LeakyReLU())
     model.add(layers.Dropout(0.3))
 
