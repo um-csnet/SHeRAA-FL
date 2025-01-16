@@ -36,6 +36,38 @@ parameters_to_ndarrays,
 NDArray,
 GetPropertiesIns,
 )
+from multiprocessing import Process
+import psutil
+import time as timex
+
+config_pathx = 'config.json'
+with open(config_pathx, 'r') as json_file:
+    configx = json.load(json_file)
+experiment_name = configx["experiment_name"]
+
+def log_cpu_memory_usage():
+    with open('resource_' + experiment_name + '.txt', 'a') as f:
+        try:
+            while True:
+                # Get CPU and memory usage
+                cpu_usage = psutil.cpu_percent(interval=1)
+                memory_info = psutil.virtual_memory()
+                memory_usage = memory_info.percent
+
+                # Log to file
+                f.write(f"CPU Usage: {cpu_usage}%\n")
+                f.write(f"Memory Usage: {memory_usage}%\n")
+                f.write("-" * 30 + "\n")
+
+                # Optional: print to console
+                print(f"CPU Usage: {cpu_usage}% | Memory Usage: {memory_usage}%")
+
+                # Wait for 5 seconds before checking again
+                timex.sleep(5)
+        except KeyboardInterrupt:
+            print("Logging stopped.")
+            f.close()
+    f.close()
 
 class SharedValue:
     valid_clients = {}
@@ -84,7 +116,7 @@ class CustomProtocol(Protocol):
                     SharedValue.valid_clients[self.client_domain][self.client_id]['test_model_accuracy'] = model_accuracy
                 else:
                     SharedValue.valid_clients[self.client_domain][self.client_id]['test_model_accuracy'] = self.predef_client[self.client_id]["test_model_accuracy"] #Only for development, must be empty from predefined client list
-                process_count, port_count = self.evaluate_verification_list(data_dict["ap"]["verification_list"])
+                process_count, port_count = self.evaluate_verification_list(data_dict["ap"]["verification_list"], data_dict['ap']['backdoorStatus'])
                 SharedValue.valid_clients[self.client_domain][self.client_id]['process_count'] = process_count
                 SharedValue.valid_clients[self.client_domain][self.client_id]['port_count'] = port_count
                 SharedValue.valid_clients[self.client_domain][self.client_id]['trust_score'] = 0
@@ -92,6 +124,7 @@ class CustomProtocol(Protocol):
                 SharedValue.valid_clients[self.client_domain][self.client_id]['client_ip'] = peer.host
                 SharedValue.valid_clients[self.client_domain][self.client_id]['client_port'] = peer.port
                 SharedValue.valid_clients[self.client_domain][self.client_id]['client_host'] = data_dict['ap']['client_host']
+                SharedValue.valid_clients[self.client_domain][self.client_id]['backdoorStatus'] = data_dict['ap']['backdoorStatus']
             else :
                 print("Unauthorized connection, removing edge client...")
                 client_protocol.transport.loseConnection()
@@ -129,11 +162,15 @@ class CustomProtocol(Protocol):
             print(classification_report(y_test_class, y_pred_class, digits=4))
         return eva_data['accuracy']
         
-    def evaluate_verification_list(self, verification_list):
+    def evaluate_verification_list(self, verification_list, backdoorStatus):
         #Can put further scrutinize on malicious process and port
         print(f"Evaluating {verification_list['client_id']} verification list")
         process_count = len(verification_list["process_list"])
         port_count = len(verification_list["port_list"])
+        if backdoorStatus == "True":
+            print("Potential backdoor detected")
+        elif backdoorStatus == "False":
+            print("No potential backdoor detected")
         return process_count, port_count
         
     def process_data(self, config):
@@ -142,11 +179,13 @@ class CustomProtocol(Protocol):
         hash_command = f"openssl dgst -sha1 -engine dynamic {config['sample_domain_verification_program_path']}"
         sample_domain_verification_program_hash = self.run_command_hash(hash_command)
         #print(sample_FL_program_hash)
+        untrusted_client = {}
         for domain in SharedValue.valid_clients:
             print("Performing attestation scoring for domain " + domain)
             proc_list = []
             port_list = []
             model_list = []
+            untrusted_client_list = []
             for client in SharedValue.valid_clients[domain]:
                 proc_list.append(SharedValue.valid_clients[domain][client]['process_count'])
                 port_list.append(SharedValue.valid_clients[domain][client]['port_count'])
@@ -161,11 +200,16 @@ class CustomProtocol(Protocol):
                 #print(SharedValue.valid_clients[domain][client]['test_model_accuracy'])
                 #Examine FL Client Training Program Hash
                 if SharedValue.valid_clients[domain][client]['ap']['FL_program_sha256'] == sample_FL_program_hash:
-                    SharedValue.valid_clients[domain][client]['trust_score'] = SharedValue.valid_clients[domain][client]['trust_score'] + 10
+                    SharedValue.valid_clients[domain][client]['trust_score'] = SharedValue.valid_clients[domain][client]['trust_score'] + 15
+                else:
+                    untrusted_client_list.append(client)
                 #Examine The Client Verification List
                 if SharedValue.valid_clients[domain][client]['process_count'] == proc_min:
                     SharedValue.valid_clients[domain][client]['trust_score'] = SharedValue.valid_clients[domain][client]['trust_score'] + 5
                 if SharedValue.valid_clients[domain][client]['port_count'] == port_min:
+                    SharedValue.valid_clients[domain][client]['trust_score'] = SharedValue.valid_clients[domain][client]['trust_score'] + 5
+                #Examine Backdoor Potential
+                if SharedValue.valid_clients[domain][client]['backdoorStatus'] == "False":
                     SharedValue.valid_clients[domain][client]['trust_score'] = SharedValue.valid_clients[domain][client]['trust_score'] + 5
                 #Examine The Client Test Model
                 if SharedValue.valid_clients[domain][client]['test_model_accuracy'] == model_max:
@@ -173,7 +217,9 @@ class CustomProtocol(Protocol):
                 elif SharedValue.valid_clients[domain][client]['test_model_accuracy'] >= 0.6:
                     SharedValue.valid_clients[domain][client]['trust_score'] = SharedValue.valid_clients[domain][client]['trust_score'] + 5
                 #print(SharedValue.valid_clients[domain][client]['trust_score'])
+            untrusted_client[domain] = untrusted_client_list
         #Client Selection Process
+        #print(untrusted_client)
         for domain in SharedValue.valid_clients:
             print("Performing local aggregator selection for domain " + domain)
             score_list = []
@@ -186,14 +232,18 @@ class CustomProtocol(Protocol):
                 if SharedValue.valid_clients[domain][client]['trust_score'] == trust_max and selected == 0:
                     selected = 1
                     choosen_aggregator = client
-                    print(f"{client} selected as local aggregator for domain {domain}")
+                    print(f"{client} selected as local aggregator for domain {domain} (Trust Score: {SharedValue.valid_clients[domain][client]['trust_score']})")
                     SharedValue.valid_clients[domain][client]['status'] = "local_aggregator"
                     hash_command = f"openssl rand -engine dynamic -hex 12"
                     aggregator_token = self.run_command_token(hash_command)
                     SharedValue.valid_clients[domain][client]['aggregator_token'] = aggregator_token
                 else:
-                    print(f"{client} become edge client for domain {domain}")
-                    SharedValue.valid_clients[domain][client]['status'] = "verified_edge_client"
+                    if client in untrusted_client[domain]:
+                        print(f"{client} become untrusted edge client for domain {domain} (Trust Score: {SharedValue.valid_clients[domain][client]['trust_score']})")
+                        SharedValue.valid_clients[domain][client]['status'] = "verified_edge_client_untrusted"
+                    else:
+                        print(f"{client} become edge client for domain {domain} (Trust Score: {SharedValue.valid_clients[domain][client]['trust_score']})")
+                        SharedValue.valid_clients[domain][client]['status'] = "verified_edge_client"
                     hash_command = f"openssl rand -engine dynamic -hex 10"
                     verification_token = self.run_command_token(hash_command)
                     SharedValue.valid_clients[domain][client]['node_verification_token'] = verification_token
@@ -205,10 +255,13 @@ class CustomProtocol(Protocol):
                     selected = 1
                     choosen_aggregator = client
                     aggregator_token = SharedValue.valid_clients[domain][client]['aggregator_token']
-                    self.send_response_aggregator(domain, client, aggregator_token, sample_FL_program_hash, sample_domain_verification_program_hash, self.config)
+                    self.send_response_aggregator(domain, client, aggregator_token, sample_FL_program_hash, sample_domain_verification_program_hash, self.config, untrusted_client)
+                elif SharedValue.valid_clients[domain][client]['status'] == "verified_edge_client_untrusted":
+                    verification_token = SharedValue.valid_clients[domain][client]['node_verification_token']
+                    self.send_response_edge_client(domain, client, verification_token, choosen_aggregator, self.config, "True")
                 else:
                     verification_token = SharedValue.valid_clients[domain][client]['node_verification_token']
-                    self.send_response_edge_client(domain, client, verification_token, choosen_aggregator, self.config)
+                    self.send_response_edge_client(domain, client, verification_token, choosen_aggregator, self.config, "False")
         with open(config["valid_client_list_path"], 'w') as file:
             json.dump(SharedValue.valid_clients, file, indent=4)
         self.storing_hashes(config)
@@ -252,7 +305,7 @@ class CustomProtocol(Protocol):
         print("Writing hash to TPM...")
         print(self.run_command_tpm(write_hash))
         
-    def send_response_aggregator(self, domain, client, aggregator_token, sample_FL_program_hash, sample_domain_verification_program_hash, config):
+    def send_response_aggregator(self, domain, client, aggregator_token, sample_FL_program_hash, sample_domain_verification_program_hash, config, untrusted_client):
         print(f"Sending aggregator token to {client}")
         client_protocol = self.factory.client_protocols[client]
         clientDomain = SharedValue.valid_clients[domain]
@@ -271,15 +324,19 @@ class CustomProtocol(Protocol):
             'training_alpha_value': config['training_alpha_value'],
             'backdoor_pattern_threshold': config['backdoor_pattern_threshold'],
             'possible_gan_threshold': config['possible_gan_threshold'],
-            'client_list': clientDomain
+            'client_list': clientDomain,
+            'untrusted_client_list': untrusted_client[domain],
+            'upload_request': "False"
         }
         serialized_data = pickle.dumps(response_dict) + b'END'
         client_protocol.transport.write(serialized_data)
         
-    def send_response_edge_client(self, domain, client, verification_token, choosen_aggregator, config):
-        print(f"Sending node verification token to {client}")
+    def send_response_edge_client(self, domain, client, verification_token, choosen_aggregator, config, uploadRequest):
+        if uploadRequest == "True":
+            print(f"Sending node verification token & Dataset Upload Request to {client}. (Aggregator: {choosen_aggregator})")
+        else:
+            print(f"Sending node verification token to {client}. (Aggregator: {choosen_aggregator})")
         client_protocol = self.factory.client_protocols[client]
-        print(choosen_aggregator)
         with open(self.predef_client[choosen_aggregator]['client_cert_path'], 'rb') as file:
             local_aggregator_cert_file = file.read()
         response_dict = {
@@ -290,7 +347,8 @@ class CustomProtocol(Protocol):
             'local_aggregator_host': SharedValue.valid_clients[domain][choosen_aggregator]['client_host'],
             'local_aggregator_cert_path': self.predef_client[choosen_aggregator]['client_cert_path'],
             'local_aggregator_cert_file': local_aggregator_cert_file,
-            'fl_training_model': config['fl_training_model']
+            'fl_training_model': config['fl_training_model'],
+            'upload_request': uploadRequest
         }
         serialized_data = pickle.dumps(response_dict) + b'END'
         client_protocol.transport.write(serialized_data)
@@ -388,8 +446,9 @@ class SaveKerasModelStrategy(fl.server.strategy.FedAvg):
             model = Sequential()
             #model.add(InputLayer(input_shape = (740,))) # input layer
             model.add(InputLayer(input_shape = (732,))) # input layer
-            model.add(Dense(6, activation='relu')) # hidden layer 1
-            model.add(Dense(6, activation='relu')) # hidden layer 2
+            model.add(Dense(32, activation='relu')) # hidden layer 1
+            model.add(Dense(64, activation='relu')) # hidden layer 2
+            model.add(Dense(128, activation='relu')) # hidden layer 3
             model.add(Dense(10, activation='softmax')) # output layer
             model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
         elif SharedValue.fl_config['fl_training_model'] == "ntc_cnn":
@@ -436,16 +495,33 @@ def globalAggregator(config):
         aggCount += 1
     SharedValue.aggCount = aggCount
     strategy = SaveKerasModelStrategy(min_available_clients=aggCount, min_fit_clients=aggCount, min_evaluate_clients=aggCount)
+    
+    #Begin counting Time
+    startTime = timex.time()
+    #monitor_process = Process(target=log_cpu_memory_usage)
+    #monitor_process.start()
+    
     if config['enable_flower_ssl'] == "True":
         fl.server.start_server(server_address=address, strategy=strategy, config=fl.server.ServerConfig(num_rounds=MAX_ROUNDS), certificates=(Path(config['server_cert_path']).read_bytes(),Path(config['server_pem_path']).read_bytes(),Path(config['server_key_path']).read_bytes()))
     else:
         fl.server.start_server(server_address=address, strategy=strategy, config=fl.server.ServerConfig(num_rounds=MAX_ROUNDS))
+    
+    #End couting time
+    executionTime = (timex.time() - startTime)
+    executionTime = executionTime / 60
+    print('Execution time in minutes: ' + str(executionTime))
+
+    #monitor_process.terminate()
     
     #Confusion Matrix
     from sklearn.metrics import confusion_matrix
     from sklearn.metrics import classification_report
     import numpy as np
     from tensorflow import keras
+    
+    # Load the classes Map from the file
+    #with open('classes.pkl', 'rb') as file:
+    #    loaded_classes = pickle.load(file)
     
     model = keras.models.load_model(model_name)
 
@@ -457,7 +533,17 @@ def globalAggregator(config):
     y_pred_class = np.argmax(model.predict(x_test),axis=1)
     y_test_class = np.argmax(y_test, axis=1)
     print(confusion_matrix(y_test_class, y_pred_class))
+    #print(classification_report(y_test_class, y_pred_class, target_names=loaded_classes, digits=4))
+    #report = classification_report(y_test_class, y_pred_class, target_names=loaded_classes, digits=4)
     print(classification_report(y_test_class, y_pred_class, digits=4))
+    report = classification_report(y_test_class, y_pred_class, digits=4)
+    
+    # Save the execution time to a file
+    with open('results_' + experiment_name + '.txt', 'w') as f:
+        f.write('Execution time in minutes: ' + str(executionTime) + '\n')
+        f.write("\n\n")
+        f.write("Classification Report:\n")
+        f.write(report)
 
 def main():
     #Load Global Attestator Config

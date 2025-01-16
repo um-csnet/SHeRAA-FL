@@ -29,8 +29,9 @@
 	"enable_flower_ssl": "False",
 	"verify_ssl_cert": "True",
 	"fl_training_config_path": "fl_training_config.json",
-	"home_path": "/mnt/c/repo/ntcfl-secure/client6/",
+	"home_path": "/mnt/c/repo/ntcfl-secure-v2/client6/",
 	"enable_gpu_training": "False",
 	"skip_domain_training": "False",
-	"regenerate_attestation_parameters": "True"
+	"regenerate_attestation_parameters": "True",
+	"experiment_name": "normal_client6_SHeRAA-FL_6client_36epochs_3rounds_cpu"
 }

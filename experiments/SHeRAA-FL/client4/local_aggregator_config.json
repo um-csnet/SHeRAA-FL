@@ -1,8 +1,8 @@
 {
     "role": "local_aggregator",
-    "aggregator_token": "c30237cc8976ee7505aa8a23",
-    "sample_FL_program_hash": "92b165dd99dfca6d4571355c893a0c3c7534e88b",
-    "sample_domain_verification_program_hash": "c981b1536bd9f3c24ad87f54a21e5eb541c8b3f4",
+    "aggregator_token": "8769c6d31913d80760e7623c",
+    "sample_FL_program_hash": "e057b3585218b3772d28e2ae23fa1b7f987ebd4f",
+    "sample_domain_verification_program_hash": "1f75b2c8e3ebdfa4af69bba950f9d90c33fa886f",
     "aggregator_ip": "172.25.218.12",
     "aggregator_port": 20004,
     "aggregator_key_path": "client4.key",
@@ -29,8 +29,8 @@
                 "client_host": "flntc",
                 "test_model_file": "",
                 "test_model_name": "testModel_client4.h5",
-                "FL_program_sha256": "92b165dd99dfca6d4571355c893a0c3c7534e88b",
-                "attestation_program_sha256": "9868cc16da1e3a452d00d9f45680a14112c6af6c",
+                "FL_program_sha256": "e057b3585218b3772d28e2ae23fa1b7f987ebd4f",
+                "attestation_program_sha256": "563bae456127930e1dc72b8afe4094a9226c2013",
                 "local_dataset_x_train_sha256": "e7f157c84c7e5a2d8755e8ef12a80bf6953a7f5a",
                 "local_dataset_y_train_sha256": "f5a6a68f06f1ccbfcd124575843f1b90658805b4",
                 "local_dataset_x_test_sha256": "a7ac938f5af50621f6897a7febca332b8ec536c8",
@@ -359,17 +359,19 @@
                         }
                     ]
                 },
-                "verification_list_sha256": "f5be25da2821c0f9ac5fbc0a50c500fb91e73f82"
+                "verification_list_sha256": "f5be25da2821c0f9ac5fbc0a50c500fb91e73f82",
+                "backdoorStatus": "False"
             },
-            "test_model_accuracy": 0.8337421424244531,
+            "test_model_accuracy": 0.9364641158303458,
             "process_count": 53,
             "port_count": 7,
-            "trust_score": 30,
+            "trust_score": 35,
             "status": "local_aggregator",
             "client_ip": "172.25.218.12",
             "client_port": 20004,
             "client_host": "flntc",
-            "aggregator_token": "c30237cc8976ee7505aa8a23"
+            "backdoorStatus": "False",
+            "aggregator_token": "8769c6d31913d80760e7623c"
         },
         "client5": {
             "ap": {
@@ -379,9 +381,9 @@
                 "client_host": "flntc",
                 "test_model_file": "",
                 "test_model_name": "testModel_client5.h5",
-                "FL_program_sha256": "92b165dd99dfca6d4571355c893a0c3c7534e88b",
-                "attestation_program_sha256": "9868cc16da1e3a452d00d9f45680a14112c6af6c",
-                "local_dataset_x_train_sha256": "27161b61ddf19baaeb59b0344065948d35e690b1",
+                "FL_program_sha256": "e057b3585218b3772d28e2ae23fa1b7f987ebd4f",
+                "attestation_program_sha256": "563bae456127930e1dc72b8afe4094a9226c2013",
+                "local_dataset_x_train_sha256": "c7d4173a91b6927e070e085c530146a40aa29773",
                 "local_dataset_y_train_sha256": "a31fbd4aa9882e74317731e8f0aead6f208b68be",
                 "local_dataset_x_test_sha256": "df52f0e4b69588c05a3b66ef7b9c64bab756a287",
                 "local_dataset_y_test_sha256": "3784f11c710c6893c32dccf9c8f218932b208aa3",
@@ -749,17 +751,19 @@
                         }
                     ]
                 },
-                "verification_list_sha256": "b095bc76f347c3b185d76da88968faa39f84f3f5"
+                "verification_list_sha256": "b095bc76f347c3b185d76da88968faa39f84f3f5",
+                "backdoorStatus": "False"
             },
-            "test_model_accuracy": 0.5424681476479409,
+            "test_model_accuracy": 0.93672231104579,
             "process_count": 61,
             "port_count": 7,
-            "trust_score": 15,
+            "trust_score": 30,
             "status": "verified_edge_client",
             "client_ip": "172.25.218.12",
             "client_port": 20005,
             "client_host": "flntc",
-            "node_verification_token": "a7a8b8d5911a6b821359"
+            "backdoorStatus": "False",
+            "node_verification_token": "1acab5493cc28428fd57"
         },
         "client6": {
             "ap": {
@@ -769,10 +773,10 @@
                 "client_host": "flntc",
                 "test_model_file": "",
                 "test_model_name": "testModel_client6.h5",
-                "FL_program_sha256": "92b165dd99dfca6d4571355c893a0c3c7534e88b",
-                "attestation_program_sha256": "9868cc16da1e3a452d00d9f45680a14112c6af6c",
-                "local_dataset_x_train_sha256": "47e4e53c4dd2a713ebcb3908cd13c000edb2beb1",
-                "local_dataset_y_train_sha256": "7656f026a20a1582416ae8d306c5eea10c8ff485",
+                "FL_program_sha256": "37121b943c6359407ef4a2e74d7345c1a24c12af",
+                "attestation_program_sha256": "563bae456127930e1dc72b8afe4094a9226c2013",
+                "local_dataset_x_train_sha256": "b627c1827f3f3cc535c99a9a0997a22c4f82386b",
+                "local_dataset_y_train_sha256": "41860896ce9aed1d46b4a4819ae714d62509045c",
                 "local_dataset_x_test_sha256": "ae543ff3472ad98ca02bfe45407d19b7c9314f91",
                 "local_dataset_y_test_sha256": "67cb30fb063b8f562b9ade0f2af4110f2180fdef",
                 "client_cert_sha256": "b3bad82afe32328d007655267fb2e9428ed34369",
@@ -1144,18 +1148,23 @@
                         }
                     ]
                 },
-                "verification_list_sha256": "a8eb59e9d69232840566826467873ed4b725a3e4"
+                "verification_list_sha256": "a8eb59e9d69232840566826467873ed4b725a3e4",
+                "backdoorStatus": "False"
             },
-            "test_model_accuracy": 0.006583977993823176,
+            "test_model_accuracy": 0.9393936384671149,
             "process_count": 62,
             "port_count": 7,
-            "trust_score": 15,
-            "status": "verified_edge_client",
+            "trust_score": 20,
+            "status": "verified_edge_client_untrusted",
             "client_ip": "172.25.218.12",
             "client_port": 20006,
             "client_host": "flntc",
-            "node_verification_token": "dc2693f962f111990215"
+            "backdoorStatus": "False",
+            "node_verification_token": "3d75d6b2b77d07dc8ab5"
         }
     },
-    "last_domain_model_path": "fed_weighted_Avg_domain_B_model_14082024_124508.h5"
+    "untrusted_client_list": [
+        "client6"
+    ],
+    "last_domain_model_path": "fed_median_adjusted_domain_B_model_16012025_171235.h5"
 }

@@ -65,7 +65,8 @@ class CustomClient(Protocol):
                 'training_alpha_value': response_dict['training_alpha_value'],
                 'backdoor_pattern_threshold': response_dict['backdoor_pattern_threshold'],
                 'possible_gan_threshold': response_dict['possible_gan_threshold'],
-                'client_list': response_dict['client_list']
+                'client_list': response_dict['client_list'],
+                'untrusted_client_list': response_dict['untrusted_client_list']
                 }
                 training_info = {}
                 training_info['role'] = "local_aggregator"
@@ -86,19 +87,24 @@ class CustomClient(Protocol):
                 training_info['recalculate_hash'] = "False"
                 training_info['home_path'] = self.config['home_path']
                 training_info['fl_training_model'] = response_dict['fl_training_model']
+                training_info['upload_request'] = response_dict['upload_request']
                 with open("local_aggregator_config.json", 'w') as file:
                     json.dump(aggregator_info, file, indent=4)
                 with open(self.config["fl_training_config_path"], 'w') as file:
                     json.dump(training_info, file, indent=4)
                 self.storing_hashes_aggregator(self.config, response_dict['client_list'], response_dict['aggregator_token'], response_dict['sample_FL_program_hash'], response_dict['sample_domain_verification_program_hash'])
             elif response_dict['type'] == "clientResponse":
-                print('This Edge Client has been verified to participate in FL Training for Domain ' + self.config['client_domain'])
+                training_info = {}
+                if response_dict['upload_request'] == "False":
+                    print('This Edge Client has been verified to participate in FL Training for Domain ' + self.config['client_domain'])
+                    training_info['role'] = "valid_client"
+                elif response_dict['upload_request'] == "True":
+                    print('This Edge Client has been verified and requires to upload datasets to local aggregator ' + self.config['client_domain'])
+                    training_info['role'] = "valid_client_untrusted"
                 print('Storing Attestation Information')
                 with open(response_dict['local_aggregator_cert_path'], 'wb') as file:
                     file.write(response_dict['local_aggregator_cert_file'])
                 print(f"Saving Local Aggregator Public Certificate {response_dict['local_aggregator_cert_path']}")
-                training_info = {}
-                training_info['role'] = "valid_client"
                 training_info['verification_token'] = response_dict['verification_token']
                 training_info['local_aggregator_ip'] = response_dict['local_aggregator_ip']
                 training_info['local_aggregator_port'] = response_dict['local_aggregator_port']
@@ -116,6 +122,7 @@ class CustomClient(Protocol):
                 training_info['recalculate_hash'] = "False"
                 training_info['home_path'] = self.config['home_path']
                 training_info['fl_training_model'] = response_dict['fl_training_model']
+                training_info['upload_request'] = response_dict['upload_request']
                 with open(self.config["fl_training_config_path"], 'w') as file:
                     json.dump(training_info, file, indent=4)
                 self.storing_hashes_client(self.config, self.ap, response_dict['verification_token'])
@@ -237,8 +244,9 @@ def trainTestModel(config):
         #MLP Model
         model = Sequential()
         model.add(InputLayer(input_shape = (x_train.shape[1],))) # input layer
-        model.add(Dense(6, activation='relu')) # hidden layer 1
-        model.add(Dense(6, activation='relu')) # hidden layer 2
+        model.add(Dense(32, activation='relu')) # hidden layer 1
+        model.add(Dense(64, activation='relu')) # hidden layer 2
+        model.add(Dense(128, activation='relu')) # hidden layer 3
         model.add(Dense(10, activation='softmax')) # output layer
         model.summary()
         # Compile model
@@ -307,6 +315,25 @@ def run_netstat_command():
             }
             ports.append(port_info)   
     return ports
+
+# Find and count recurring backdoor patterns
+def find_recurring_patterns_with_count(array):
+    seen_patterns = {}
+    recurring_patterns = {}
+    for i, row in enumerate(array):
+        row_tuple = tuple(row)  # Convert row to a hashable tuple
+        if row_tuple in seen_patterns:
+            if row_tuple in recurring_patterns:
+                recurring_patterns[row_tuple]['count'] += 1
+                recurring_patterns[row_tuple]['indices'].append(i)
+            else:
+                recurring_patterns[row_tuple] = {
+                    'count': 2,  # Initial count is 2 (first occurrence and this one)
+                    'indices': [seen_patterns[row_tuple], i]
+                }
+        else:
+            seen_patterns[row_tuple] = i
+    return recurring_patterns
         
 def generateAttestationParameters(config):
     if os.path.exists(config["verification_list_path"]):
@@ -327,12 +354,46 @@ def generateAttestationParameters(config):
         }
         with open(config["verification_list_path"], 'w') as file:
             json.dump(vl, file, indent=4)
+            
     if os.path.exists(config["attestation_parameters_path"]) and config["regenerate_attestation_parameters"] == "False":
         print("The attestation parameters has been generated, loading existing list " + config["attestation_parameters_path"])
         with open(config["attestation_parameters_path"], 'r') as json_file:
             ap = json.load(json_file)
     else:
         print("Generating Client Attestation Parameters")
+        
+        ##Check Backdoor Pattern
+        checkPathx = config['local_dataset_x_train_path']
+        checkPathy = config['local_dataset_y_train_path']
+        x_train_check = np.load(checkPathx)
+        y_train_check = np.load(checkPathy)
+        array = x_train_check
+        recurring_patterns = find_recurring_patterns_with_count(array)
+        backdoor_status = 0
+        if recurring_patterns:
+            print("Checking for potential backdoor pattern...")
+            for pattern, info in recurring_patterns.items():
+                if info['count'] >= 5000:
+                    print("Possible backdoor pattern detected")
+                    print("Attempting to remove backdoor pattern..")
+                    print(f"Pattern: {pattern[:5]}... (truncated for display), Count: {info['count']}")
+                    backdoor_status = 1
+                    x_train_check = np.delete(x_train_check, info['indices'], 0)
+                    y_train_check = np.delete(y_train_check, info['indices'], 0)
+                    np.save(checkPathx, x_train_check) # Replacing dataset
+                    np.save(checkPathy, y_train_check) # Replacing dataset
+        else:
+            print("No recurring patterns found")
+        x_train_verify = np.load(checkPathx)
+        y_train_verify = np.load(checkPathy)
+        print(x_train_verify.shape)
+        print(x_train_verify.shape)
+        
+        if backdoor_status == 0:
+            bs = "False"
+            print("No recurring patterns found which exceed the threshold value..")
+        elif backdoor_status == 1:
+            bs = "True"
     
         with open(config["test_model_path"], 'rb') as file:
             test_model = file.read() 
@@ -374,14 +435,16 @@ def generateAttestationParameters(config):
         "local_dataset_y_test_sha256": local_dataset_y_test_sha256,
         "client_cert_sha256": client_cert_sha256,
         "verification_list": vl,
-        "verification_list_sha256": verification_list_sha256
+        "verification_list_sha256": verification_list_sha256,
+        "backdoorStatus": bs
         }
         with open(config["attestation_parameters_path"], 'w') as file:
             json.dump(ap, file, indent=4)
         
     with open(config["test_model_path"], 'rb') as file:
             test_model = file.read()
-    ap["test_model_file"] = test_model      
+    ap["test_model_file"] = test_model  
+
     return ap
 
 class ClientContextFactory(ssl.ClientContextFactory):

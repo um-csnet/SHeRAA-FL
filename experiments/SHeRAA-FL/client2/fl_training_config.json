@@ -1,6 +1,6 @@
 {
-    "role": "valid_client",
-    "verification_token": "446e780873418b9a75e2",
+    "role": "untrusted_client",
+    "verification_token": "8c4ea271345bde65f50e",
     "local_aggregator_ip": "172.25.218.12",
     "local_aggregator_port": 20001,
     "local_aggregator_cert_path": "client1.crt",
@@ -15,6 +15,7 @@
     "domain_verification_program_path": "domain_verification_client2.py",
     "tpm_index": "0x1200001",
     "recalculate_hash": "False",
-    "home_path": "/mnt/c/repo/ntcfl-secure/client2/",
-    "fl_training_model": "ntc_mlp"
+    "home_path": "/mnt/c/repo/ntcfl-secure-v2/client2/",
+    "fl_training_model": "ntc_mlp",
+    "upload_request": "True"
 }

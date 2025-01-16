@@ -1,11 +1,12 @@
 #Author: Muhammad Azizi Bin Mohd Ariffin
 #Email: mazizi@fskm.uitm.edu.my
-#Description: Gradient Factor attack FL Client Program for ISCX-VPN 2016 (SHeRAA-FL client experiment)
+#Description: FL Training Program for Local Aggregator and Edge Client
 
 import json
 import numpy as np
 import sys
 import os
+import pickle
 import shutil
 import pandas as pd
 import subprocess
@@ -44,6 +45,9 @@ parameters_to_ndarrays,
 NDArray,
 GetPropertiesIns,
 )
+import time as timex
+import wandb
+from wandb.integration.keras import WandbMetricsLogger, WandbModelCheckpoint
 
 class SharedValue:
     trainConfig = {}
@@ -51,14 +55,20 @@ class SharedValue:
     countMal = 0
     choosen_algo = "fed_weighted_Avg"
     modelPerf = []
+    gan_status = 0
 
 class ntcClient(fl.client.NumPyClient):
-    def __init__(self, client_id, verification_token, fl_config, x, y):
+    def __init__(self, client_id, verification_token, fl_config, x, y, experiment_name, delStat):
         self.cid = client_id  # client ID
         self.verification_token = verification_token
         self.fl_config = fl_config
         self.x_train = np.load(x)
         self.y_train = np.load(y)
+        self.experiment_name = experiment_name
+        self.delStat = delStat
+        print(self.experiment_name)
+        print(x)
+        print(y)
         
         ##Remove Source and Destination IP From Dataset
         #print(self.x_train.shape)
@@ -71,8 +81,9 @@ class ntcClient(fl.client.NumPyClient):
             self.model = Sequential()
             #self.model.add(InputLayer(input_shape = (740,))) # input layer
             self.model.add(InputLayer(input_shape = (self.x_train.shape[1],))) # input layer
-            self.model.add(Dense(6, activation='relu')) # hidden layer 1
-            self.model.add(Dense(6, activation='relu')) # hidden layer 2
+            self.model.add(Dense(32, activation='relu')) # hidden layer 1
+            self.model.add(Dense(64, activation='relu')) # hidden layer 2
+            self.model.add(Dense(128, activation='relu')) # hidden layer 3
             self.model.add(Dense(10, activation='softmax')) # output layer
             self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
         elif self.fl_config['fl_training_model'] == "ntc_cnn":
@@ -111,12 +122,43 @@ class ntcClient(fl.client.NumPyClient):
         grads = self.compute_grads(x, y)
         combined_grads = [negative_factor * g for g in grads]
         return combined_grads
-            
+        
     def get_properties(self, config) -> Dict[str, Scalar]:
         properties = {"client_id": self.cid, "verification_token": self.verification_token}
         return properties
 
-def fl_client(config, fl_config, retrieveTPMHash, status, x, y, client_id):
+def fl_client(config, fl_config, retrieveTPMHash, status, x, y, client_id, delStat, delStatCount):
+
+    config_pathx = 'config.json'
+    with open(config_pathx, 'r') as json_file:
+        configx = json.load(json_file)
+    experiment_name = configx["experiment_name"]
+    
+    if delStat == "True":
+        experiment_name = experiment_name + "_delegate" + str(delStatCount)
+    
+    #tracking hyperparameters
+    wandb.init(
+        project="SHeRAA-Light",
+        name=experiment_name,
+        # track hyperparameters and run metadata with wandb.config
+        config={
+            "layer_1": 32,
+            "activation_1": "relu",
+            "layer_2": 64,
+            "activation_2": "relu",
+            "layer_3": 128,
+            "activation_3": "relu",
+            "layer_4": 10,
+            "activation_4": "softmax",
+            "optimizer": "adam",
+            "loss": "categorical_crossentropy",
+            "metric": "accuracy",
+            "epoch": 36,
+            "batch_size": 64
+        }
+    )
+
     print("This Edge node is selected as client for domain " + fl_config['client_domain'])
     if config['enable_gpu_training'] == "False":
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
@@ -134,11 +176,26 @@ def fl_client(config, fl_config, retrieveTPMHash, status, x, y, client_id):
     else:
         print("Unknown FL client Status..exiting")
         exit()
+        
+    #Begin counting Time
+    startTime = timex.time()
+        
     if config['enable_flower_ssl'] == "True":
         address = fl_config['local_aggregator_host'] + ":" + str(fl_config['local_aggregator_port'])
-        fl.client.start_numpy_client(server_address=address, client=ntcClient(client_id=client_id, verification_token=token, fl_config=fl_config, x=x, y=y), root_certificates=Path(fl_config['local_aggregator_cert_path']).read_bytes())
+        fl.client.start_numpy_client(server_address=address, client=ntcClient(client_id=client_id, verification_token=token, fl_config=fl_config, x=x, y=y, experiment_name=experiment_name, delStat=delStat), root_certificates=Path(fl_config['local_aggregator_cert_path']).read_bytes())
     else:
-        fl.client.start_numpy_client(server_address="127.0.0.1:" + str(fl_config['local_aggregator_port']) , client=ntcClient(client_id=client_id, verification_token=token, fl_config=fl_config, x=x, y=y))
+        fl.client.start_numpy_client(server_address="127.0.0.1:" + str(fl_config['local_aggregator_port']) , client=ntcClient(client_id=client_id, verification_token=token, fl_config=fl_config, x=x, y=y, experiment_name=experiment_name, delStat=delStat))
+    
+    #End couting time
+    executionTime = (timex.time() - startTime)
+    executionTime = executionTime / 60
+    print('Execution time in minutes: ' + str(executionTime))
+
+    wandb.finish()
+
+    # Save the execution time to a file
+    with open('results_' + experiment_name + '.txt', 'w') as f:
+        f.write('Execution time in minutes: ' + str(executionTime) + '\n')
 
 class SaveKerasModelStrategy(fl.server.strategy.FedAvg):
     def aggregatex(self, results: List[Tuple[NDArrays, int]], client_weights: List[float]) -> NDArrays:
@@ -220,9 +277,14 @@ class SaveKerasModelStrategy(fl.server.strategy.FedAvg):
                 print(f"Unauthorized connection from {prop['client_id']} ")
         return fit_configurations
         
-    def get_client_weight(self, client_id, token):
+    def get_client_weight(self, client_id, token, server_round):
         """Determine the weight for a client based on client ID."""
         # Logic to return the weight based on the client ID
+        if SharedValue.gan_status == 1:
+            perf_threshold = 0.8
+        else:
+            perf_threshold = 0.6
+        print("Performance Threshold: " + str(perf_threshold))
         ts = []
         for client in SharedValue.tpmAggCache:
             ts.append(SharedValue.tpmAggCache[client]['ts'])
@@ -233,7 +295,7 @@ class SaveKerasModelStrategy(fl.server.strategy.FedAvg):
                 countMoreMedian += 1
         lessCheck = 0
         for perf in SharedValue.modelPerf:
-            if perf < 0.6:
+            if perf < perf_threshold:
                 lessCheck = 1
         client_weights = []
         if lessCheck == 0:
@@ -255,17 +317,17 @@ class SaveKerasModelStrategy(fl.server.strategy.FedAvg):
             morelist = 0
             lesslist = 0
             for perf in SharedValue.modelPerf:
-                if perf >= 0.6:
+                if perf >= perf_threshold:
                     morelist += 1
-                elif perf < 0.6:
+                elif perf < perf_threshold:
                     lesslist += 1
             SharedValue.countMal = lesslist
             trustScoreMore = 0.9 / morelist
             trustScoreLess = 0.1 / lesslist
             for perf in SharedValue.modelPerf:
-                if perf >= 0.6:
+                if perf >= perf_threshold:
                     client_weights.append(trustScoreMore)
-                elif perf < 0.6:
+                elif perf < perf_threshold:
                     client_weights.append(trustScoreLess)
         return client_weights
         
@@ -299,113 +361,129 @@ class SaveKerasModelStrategy(fl.server.strategy.FedAvg):
         if SharedValue.trainConfig['fl_training_model_type'] == "ntc_mlp":
             model = Sequential()
             model.add(InputLayer(input_shape = (SharedValue.trainConfig['fl_training_model_input_size'],))) # input layer
-            model.add(Dense(6, activation='relu')) # hidden layer 1
-            model.add(Dense(6, activation='relu')) # hidden layer 2
+            model.add(Dense(32, activation='relu')) # hidden layer 1
+            model.add(Dense(64, activation='relu')) # hidden layer 2
+            model.add(Dense(128, activation='relu')) # hidden layer 3
             model.add(Dense(10, activation='softmax')) # output layer
             model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
             
             fed_avg_test_model = Sequential()
             fed_avg_test_model.add(InputLayer(input_shape = (SharedValue.trainConfig['fl_training_model_input_size'],))) # input layer
-            fed_avg_test_model.add(Dense(6, activation='relu')) # hidden layer 1
-            fed_avg_test_model.add(Dense(6, activation='relu')) # hidden layer 2
+            fed_avg_test_model.add(Dense(32, activation='relu')) # hidden layer 1
+            fed_avg_test_model.add(Dense(64, activation='relu')) # hidden layer 2
+            fed_avg_test_model.add(Dense(128, activation='relu')) # hidden layer 3
             fed_avg_test_model.add(Dense(10, activation='softmax')) # output layer
             fed_avg_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
             
             fed_weighted_avg_test_model = Sequential()
             fed_weighted_avg_test_model.add(InputLayer(input_shape = (SharedValue.trainConfig['fl_training_model_input_size'],))) # input layer
-            fed_weighted_avg_test_model.add(Dense(6, activation='relu')) # hidden layer 1
-            fed_weighted_avg_test_model.add(Dense(6, activation='relu')) # hidden layer 2
+            fed_weighted_avg_test_model.add(Dense(32, activation='relu')) # hidden layer 1
+            fed_weighted_avg_test_model.add(Dense(64, activation='relu')) # hidden layer 2
+            fed_weighted_avg_test_model.add(Dense(128, activation='relu')) # hidden layer 3
             fed_weighted_avg_test_model.add(Dense(10, activation='softmax')) # output layer
             fed_weighted_avg_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
             
             fed_median_test_model = Sequential()
             fed_median_test_model.add(InputLayer(input_shape = (SharedValue.trainConfig['fl_training_model_input_size'],))) # input layer
-            fed_median_test_model.add(Dense(6, activation='relu')) # hidden layer 1
-            fed_median_test_model.add(Dense(6, activation='relu')) # hidden layer 2
+            fed_median_test_model.add(Dense(32, activation='relu')) # hidden layer 1
+            fed_median_test_model.add(Dense(64, activation='relu')) # hidden layer 2
+            fed_median_test_model.add(Dense(128, activation='relu')) # hidden layer 3
             fed_median_test_model.add(Dense(10, activation='softmax')) # output layer
             fed_median_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
             
             fed_trim10_test_model = Sequential()
             fed_trim10_test_model.add(InputLayer(input_shape = (SharedValue.trainConfig['fl_training_model_input_size'],))) # input layer
-            fed_trim10_test_model.add(Dense(6, activation='relu')) # hidden layer 1
-            fed_trim10_test_model.add(Dense(6, activation='relu')) # hidden layer 2
+            fed_trim10_test_model.add(Dense(32, activation='relu')) # hidden layer 1
+            fed_trim10_test_model.add(Dense(64, activation='relu')) # hidden layer 2
+            fed_trim10_test_model.add(Dense(128, activation='relu')) # hidden layer 3
             fed_trim10_test_model.add(Dense(10, activation='softmax')) # output layer
             fed_trim10_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
             
             fed_trim20_test_model = Sequential()
             fed_trim20_test_model.add(InputLayer(input_shape = (SharedValue.trainConfig['fl_training_model_input_size'],))) # input layer
-            fed_trim20_test_model.add(Dense(6, activation='relu')) # hidden layer 1
-            fed_trim20_test_model.add(Dense(6, activation='relu')) # hidden layer 2
+            fed_trim20_test_model.add(Dense(32, activation='relu')) # hidden layer 1
+            fed_trim20_test_model.add(Dense(64, activation='relu')) # hidden layer 2
+            fed_trim20_test_model.add(Dense(128, activation='relu')) # hidden layer 3
             fed_trim20_test_model.add(Dense(10, activation='softmax')) # output layer
             fed_trim20_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
             
             fed_trim30_test_model = Sequential()
             fed_trim30_test_model.add(InputLayer(input_shape = (SharedValue.trainConfig['fl_training_model_input_size'],))) # input layer
-            fed_trim30_test_model.add(Dense(6, activation='relu')) # hidden layer 1
-            fed_trim30_test_model.add(Dense(6, activation='relu')) # hidden layer 2
+            fed_trim30_test_model.add(Dense(32, activation='relu')) # hidden layer 1
+            fed_trim30_test_model.add(Dense(64, activation='relu')) # hidden layer 2
+            fed_trim30_test_model.add(Dense(128, activation='relu')) # hidden layer 3
             fed_trim30_test_model.add(Dense(10, activation='softmax')) # output layer
             fed_trim30_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
             
             fed_krum_test_model = Sequential()
             fed_krum_test_model.add(InputLayer(input_shape = (SharedValue.trainConfig['fl_training_model_input_size'],))) # input layer
-            fed_krum_test_model.add(Dense(6, activation='relu')) # hidden layer 1
-            fed_krum_test_model.add(Dense(6, activation='relu')) # hidden layer 2
+            fed_krum_test_model.add(Dense(32, activation='relu')) # hidden layer 1
+            fed_krum_test_model.add(Dense(64, activation='relu')) # hidden layer 2
+            fed_krum_test_model.add(Dense(128, activation='relu')) # hidden layer 3
             fed_krum_test_model.add(Dense(10, activation='softmax')) # output layer
             fed_krum_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
             
             fed_multi_krum_test_model = Sequential()
             fed_multi_krum_test_model.add(InputLayer(input_shape = (SharedValue.trainConfig['fl_training_model_input_size'],))) # input layer
-            fed_multi_krum_test_model.add(Dense(6, activation='relu')) # hidden layer 1
-            fed_multi_krum_test_model.add(Dense(6, activation='relu')) # hidden layer 2
+            fed_multi_krum_test_model.add(Dense(32, activation='relu')) # hidden layer 1
+            fed_multi_krum_test_model.add(Dense(64, activation='relu')) # hidden layer 2
+            fed_multi_krum_test_model.add(Dense(128, activation='relu')) # hidden layer 3
             fed_multi_krum_test_model.add(Dense(10, activation='softmax')) # output layer
             fed_multi_krum_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
             
             fed_median_adjusted_test_model = Sequential()
             fed_median_adjusted_test_model.add(InputLayer(input_shape = (SharedValue.trainConfig['fl_training_model_input_size'],))) # input layer
-            fed_median_adjusted_test_model.add(Dense(6, activation='relu')) # hidden layer 1
-            fed_median_adjusted_test_model.add(Dense(6, activation='relu')) # hidden layer 2
+            fed_median_adjusted_test_model.add(Dense(32, activation='relu')) # hidden layer 1
+            fed_median_adjusted_test_model.add(Dense(64, activation='relu')) # hidden layer 2
+            fed_median_adjusted_test_model.add(Dense(128, activation='relu')) # hidden layer 3
             fed_median_adjusted_test_model.add(Dense(10, activation='softmax')) # output layer
             fed_median_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
             
             fed_trim10_adjusted_test_model = Sequential()
             fed_trim10_adjusted_test_model.add(InputLayer(input_shape = (SharedValue.trainConfig['fl_training_model_input_size'],))) # input layer
-            fed_trim10_adjusted_test_model.add(Dense(6, activation='relu')) # hidden layer 1
-            fed_trim10_adjusted_test_model.add(Dense(6, activation='relu')) # hidden layer 2
+            fed_trim10_adjusted_test_model.add(Dense(32, activation='relu')) # hidden layer 1
+            fed_trim10_adjusted_test_model.add(Dense(64, activation='relu')) # hidden layer 2
+            fed_trim10_adjusted_test_model.add(Dense(128, activation='relu')) # hidden layer 3
             fed_trim10_adjusted_test_model.add(Dense(10, activation='softmax')) # output layer
             fed_trim10_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
             
             fed_trim20_adjusted_test_model = Sequential()
             fed_trim20_adjusted_test_model.add(InputLayer(input_shape = (SharedValue.trainConfig['fl_training_model_input_size'],))) # input layer
-            fed_trim20_adjusted_test_model.add(Dense(6, activation='relu')) # hidden layer 1
-            fed_trim20_adjusted_test_model.add(Dense(6, activation='relu')) # hidden layer 2
+            fed_trim20_adjusted_test_model.add(Dense(32, activation='relu')) # hidden layer 1
+            fed_trim20_adjusted_test_model.add(Dense(64, activation='relu')) # hidden layer 2
+            fed_trim20_adjusted_test_model.add(Dense(128, activation='relu')) # hidden layer 3
             fed_trim20_adjusted_test_model.add(Dense(10, activation='softmax')) # output layer
             fed_trim20_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
             
             fed_trim30_adjusted_test_model = Sequential()
             fed_trim30_adjusted_test_model.add(InputLayer(input_shape = (SharedValue.trainConfig['fl_training_model_input_size'],))) # input layer
-            fed_trim30_adjusted_test_model.add(Dense(6, activation='relu')) # hidden layer 1
-            fed_trim30_adjusted_test_model.add(Dense(6, activation='relu')) # hidden layer 2
+            fed_trim30_adjusted_test_model.add(Dense(32, activation='relu')) # hidden layer 1
+            fed_trim30_adjusted_test_model.add(Dense(64, activation='relu')) # hidden layer 2
+            fed_trim30_adjusted_test_model.add(Dense(128, activation='relu')) # hidden layer 3
             fed_trim30_adjusted_test_model.add(Dense(10, activation='softmax')) # output layer
             fed_trim30_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
             
             fed_krum_adjusted_test_model = Sequential()
             fed_krum_adjusted_test_model.add(InputLayer(input_shape = (SharedValue.trainConfig['fl_training_model_input_size'],))) # input layer
-            fed_krum_adjusted_test_model.add(Dense(6, activation='relu')) # hidden layer 1
-            fed_krum_adjusted_test_model.add(Dense(6, activation='relu')) # hidden layer 2
+            fed_krum_adjusted_test_model.add(Dense(32, activation='relu')) # hidden layer 1
+            fed_krum_adjusted_test_model.add(Dense(64, activation='relu')) # hidden layer 2
+            fed_krum_adjusted_test_model.add(Dense(128, activation='relu')) # hidden layer 3
             fed_krum_adjusted_test_model.add(Dense(10, activation='softmax')) # output layer
             fed_krum_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
             
             fed_multi_krum_adjusted_test_model = Sequential()
             fed_multi_krum_adjusted_test_model.add(InputLayer(input_shape = (SharedValue.trainConfig['fl_training_model_input_size'],))) # input layer
-            fed_multi_krum_adjusted_test_model.add(Dense(6, activation='relu')) # hidden layer 1
-            fed_multi_krum_adjusted_test_model.add(Dense(6, activation='relu')) # hidden layer 2
+            fed_multi_krum_adjusted_test_model.add(Dense(32, activation='relu')) # hidden layer 1
+            fed_multi_krum_adjusted_test_model.add(Dense(64, activation='relu')) # hidden layer 2
+            fed_multi_krum_adjusted_test_model.add(Dense(128, activation='relu')) # hidden layer 3
             fed_multi_krum_adjusted_test_model.add(Dense(10, activation='softmax')) # output layer
             fed_multi_krum_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
             
             last_model = Sequential()
             last_model.add(InputLayer(input_shape = (SharedValue.trainConfig['fl_training_model_input_size'],))) # input layer
-            last_model.add(Dense(6, activation='relu')) # hidden layer 1
-            last_model.add(Dense(6, activation='relu')) # hidden layer 2
+            last_model.add(Dense(32, activation='relu')) # hidden layer 1
+            last_model.add(Dense(64, activation='relu')) # hidden layer 2
+            last_model.add(Dense(128, activation='relu')) # hidden layer 3
             last_model.add(Dense(10, activation='softmax')) # output layer
             last_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
             
@@ -416,15 +494,19 @@ class SaveKerasModelStrategy(fl.server.strategy.FedAvg):
         x_test = np.load(SharedValue.trainConfig['x_test'])
         y_test = np.load(SharedValue.trainConfig['y_test'])
         x_test = np.delete(x_test, [12,13,14,15,16,17,18,19], 1)
-        
+        evalDataList = []
+        benchGan = []
+        ownCheck = 0
         #if server_round == 1 :
         if True :
+            indexCheck = 0
             for weight in clientParam:
                 if SharedValue.trainConfig['fl_training_model_type'] == "ntc_mlp":
                     modeleval = Sequential()
                     modeleval.add(InputLayer(input_shape = (SharedValue.trainConfig['fl_training_model_input_size'],))) # input layer
-                    modeleval.add(Dense(6, activation='relu')) # hidden layer 1
-                    modeleval.add(Dense(6, activation='relu')) # hidden layer 2
+                    modeleval.add(Dense(32, activation='relu')) # hidden layer 1
+                    modeleval.add(Dense(64, activation='relu')) # hidden layer 2
+                    modeleval.add(Dense(128, activation='relu')) # hidden layer 3
                     modeleval.add(Dense(10, activation='softmax')) # output layer
                     modeleval.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
                 elif self.fl_config['fl_training_model'] == "ntc_cnn":
@@ -434,12 +516,40 @@ class SaveKerasModelStrategy(fl.server.strategy.FedAvg):
                 y_pred_class = np.argmax(modeleval.predict(x_test),axis=1)
                 y_test_class = np.argmax(y_test, axis=1)
                 eva_data = classification_report(y_test_class, y_pred_class, digits=4, output_dict=True)
+                evalDataList.append(eva_data)
                 #print(classification_report(y_test_class, y_pred_class, digits=4))
                 eval_result = eva_data['accuracy']
                 SharedValue.modelPerf.append(eval_result)
+                if custom_id[indexCheck] == SharedValue.trainConfig['own_id']:
+                    #print(custom_id[indexCheck])
+                    #print(eva_data)
+                    ownCheck = indexCheck
+                    for cls in eva_data:
+                        if cls != 'accuracy' and cls != 'macro avg' and cls != 'weighted avg':
+                            benchGan.append(eva_data[cls]['f1-score'])
+                indexCheck += 1
+            ##Checking classes F1-score for possible GAN Attack
+            possible_gan_count = 0
+            cc = 0
+            if server_round == 1 :
+                for evalGan in evalDataList:
+                    if cc != ownCheck:
+                        ccc = 0
+                        for cls in evalGan:
+                            if cls != 'accuracy' and cls != 'macro avg' and cls != 'weighted avg':
+                                #print(evalGan[cls])
+                                #print(benchGan[ccc])
+                                if benchGan[ccc] >= 0.1:
+                                    if evalGan[cls]['f1-score'] < 0.1:
+                                        possible_gan_count += 1
+                                ccc += 1
+                    cc += 1
+                if possible_gan_count >= SharedValue.trainConfig['possible_gan_threshold']:
+                    SharedValue.gan_status = 1
+                    print(f"Detected attempted GAN-based attack from {possible_gan_count} malicious clients")
             print(SharedValue.modelPerf)
             
-        client_weights = self.get_client_weight(custom_id, token)
+        client_weights = self.get_client_weight(custom_id, token, server_round)
         ##Printing Client Weight
         cc = 0
         for wei in client_weights:
@@ -739,8 +849,9 @@ class SaveKerasModelStrategy(fl.server.strategy.FedAvg):
                         if SharedValue.trainConfig['fl_training_model_type'] == "ntc_mlp":
                             modeleval = Sequential()
                             modeleval.add(InputLayer(input_shape = (SharedValue.trainConfig['fl_training_model_input_size'],))) # input layer
-                            modeleval.add(Dense(6, activation='relu')) # hidden layer 1
-                            modeleval.add(Dense(6, activation='relu')) # hidden layer 2
+                            modeleval.add(Dense(32, activation='relu')) # hidden layer 1
+                            modeleval.add(Dense(64, activation='relu')) # hidden layer 2
+                            modeleval.add(Dense(128, activation='relu')) # hidden layer 3
                             modeleval.add(Dense(10, activation='softmax')) # output layer
                             modeleval.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
                         elif self.fl_config['fl_training_model'] == "ntc_cnn":
@@ -798,6 +909,7 @@ def fl_aggregator(config, fl_config, retrieveTPMHash, client_count):
     "fl_training_model_type": agg_config['fl_training_model'],
     "fl_training_model_input_size": x_test.shape[1],
     "training_alpha_value": agg_config['training_alpha_value'],
+    "possible_gan_threshold" : agg_config['possible_gan_threshold'],
     "own_id": fl_config['client_id'],
     "client_count": client_count,
     "x_test": fl_config['local_dataset_x_test_path'],
@@ -912,6 +1024,8 @@ if __name__ == "__main__":
     aggClient = 0
     ClientDelegate = 0
     if fl_config['role'] == 'local_aggregator' and "ts" in retrieveTPMHash[fl_config['client_id']]:
+        delStat = "False"
+        delStatCount = 0
         if config["skip_domain_training"] == "False":
             try:
                 with open('trusted_client.json', 'r') as json_file:
@@ -930,18 +1044,20 @@ if __name__ == "__main__":
             client_id = fl_config['client_id']
             aggClient = 1
             status = "local_aggregator"
-            p.append(multiprocessing.Process(target=fl_client, args=(config, fl_config, retrieveTPMHash, status, x, y, client_id)))
+            p.append(multiprocessing.Process(target=fl_client, args=(config, fl_config, retrieveTPMHash, status, x, y, client_id, delStat, delStatCount)))
             aggProcessCount = 0
             p[aggProcessCount].start()
             if "delegated" in trusted_client[fl_config['client_id']]:
+                delStat = "True"
                 for delegate in trusted_client[fl_config['client_id']]["delegated"]:
+                    delStatCount += 1
                     aggProcessCount += 1
                     status = "local_aggregator_delegate"
                     secure_storage_path = fl_config['home_path'] + "secureStorage/"
                     x = secure_storage_path + trusted_client[fl_config['client_id']]["delegated"][delegate]['local_dataset_x_train_name']
-                    y = secure_storage_path + trusted_client[fl_config['client_id']]["delegated"][delegate]['local_dataset_y_train_name'] 
+                    y = secure_storage_path + trusted_client[fl_config['client_id']]["delegated"][delegate]['local_dataset_y_train_name']
                     client_id = delegate
-                    p.append(multiprocessing.Process(target=fl_client, args=(config, fl_config, retrieveTPMHash, status, x, y, client_id)))
+                    p.append(multiprocessing.Process(target=fl_client, args=(config, fl_config, retrieveTPMHash, status, x, y, client_id, delStat, delStatCount)))
                     p[aggProcessCount].start()
             fl_aggregator(config, fl_config, retrieveTPMHash, client_count)
             if aggClient == 1:
@@ -952,22 +1068,27 @@ if __name__ == "__main__":
         global_agg(fl_config, config, retrieveTPMHash)
     elif fl_config['role'] == 'valid_client' and "x" not in retrieveTPMHash :
         clientDelegateProcessCount = 0
+        delStat = "False"
+        delStatCount = 0
         if "delegated" in fl_config:
+            delStat = "True"
             ClientDelegate = 1
             for delegate in fl_config["delegated"]:
+                delStatCount += 1
                 status = "client_delegate"
                 delegate_storage_path = fl_config['home_path'] + "delegateStorage/"
                 client_id = delegate
                 x = delegate_storage_path + fl_config["delegated"][delegate]['local_dataset_x_train_name']
                 y = delegate_storage_path + fl_config["delegated"][delegate]['local_dataset_y_train_name']
-                pc.append(multiprocessing.Process(target=fl_client, args=(config, fl_config, retrieveTPMHash, status, x, y, client_id)))
+                pc.append(multiprocessing.Process(target=fl_client, args=(config, fl_config, retrieveTPMHash, status, x, y, client_id, delStat, delStatCount)))
                 pc[clientDelegateProcessCount].start()
                 clientDelegateProcessCount += 1
         status = "client"
         x = fl_config['local_dataset_x_train_path']
         y = fl_config['local_dataset_y_train_path']
         client_id = fl_config['client_id']
-        fl_client(config, fl_config, retrieveTPMHash, status, x, y, client_id)
+        delStat = "False"
+        fl_client(config, fl_config, retrieveTPMHash, status, x, y, client_id, delStat, delStatCount)
         if ClientDelegate == 1:
             c = 0
             for process in pc:

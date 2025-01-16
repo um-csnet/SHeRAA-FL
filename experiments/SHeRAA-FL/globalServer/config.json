@@ -18,7 +18,7 @@
 	"tpm_index": "0x1000001",
 	"predefined_client_list_path": "predefined_client_list.json",
 	"valid_client_list_path": "valid_client_list.json",
-	"home_path": "/mnt/c/repo/ntcfl-secure/globalServer/",
+	"home_path": "/mnt/c/repo/ntcfl-secure-v2/globalServer/",
 	"enable_flower_ssl": "False",
 	"verify_ssl_cert": "True",
 	"skip_attestation": "False",
@@ -29,5 +29,6 @@
 	"backdoor_pattern_threshold": 5000,
 	"possible_gan_threshold": 2,
 	"show_classification_report": "True",
-	"scenario": "gan4"
+	"scenario": "normal",
+	"experiment_name": "normal_global_SHeRAA-FL_6client_36epochs_3rounds_cpu"
 }

@@ -5,8 +5,8 @@
     "client_host": "flntc",
     "test_model_file": "",
     "test_model_name": "testModel_client4.h5",
-    "FL_program_sha256": "92b165dd99dfca6d4571355c893a0c3c7534e88b",
-    "attestation_program_sha256": "9868cc16da1e3a452d00d9f45680a14112c6af6c",
+    "FL_program_sha256": "e057b3585218b3772d28e2ae23fa1b7f987ebd4f",
+    "attestation_program_sha256": "563bae456127930e1dc72b8afe4094a9226c2013",
     "local_dataset_x_train_sha256": "e7f157c84c7e5a2d8755e8ef12a80bf6953a7f5a",
     "local_dataset_y_train_sha256": "f5a6a68f06f1ccbfcd124575843f1b90658805b4",
     "local_dataset_x_test_sha256": "a7ac938f5af50621f6897a7febca332b8ec536c8",
@@ -335,5 +335,6 @@
             }
         ]
     },
-    "verification_list_sha256": "f5be25da2821c0f9ac5fbc0a50c500fb91e73f82"
+    "verification_list_sha256": "f5be25da2821c0f9ac5fbc0a50c500fb91e73f82",
+    "backdoorStatus": "False"
 }

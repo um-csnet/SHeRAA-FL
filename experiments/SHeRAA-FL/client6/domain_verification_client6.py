@@ -29,6 +29,7 @@ class SharedValue:
     untrusted_client = {}
     trusted_client = {}
     client_list = {}
+    remove_client = {}
 
 def fl_aggregator_worker(fl_config, config):
     print("Running Local Aggregator FL Client Training Program")
@@ -86,15 +87,18 @@ class CustomClient(Protocol):
             print(local_dataset_y_train_sha256)
             print('The training is compromised, terminating training process..')
             self.transport.loseConnection()
-        print('Uploading Local Dataset and FL Training Program to Local Aggregator..')
-        with open(self.fl_config['FL_program_path'], 'rb') as file:
-            FL_program_file = file.read()
-        with open(self.fl_config['local_dataset_y_train_path'], 'rb') as file:
-            local_dataset_y_train_file = file.read()
-        file_size = os.path.getsize(self.fl_config['local_dataset_x_train_path'])
-        hash_command = f"openssl dgst -sha1 -engine dynamic {self.fl_config['domain_verification_program_path']}"
-        domain_verification_program_hash = self.run_command_hash(hash_command)
-        data_dict = {
+            
+        if self.fl_config['upload_request'] == "True":
+            print('Uploading Local Dataset to Local Aggregator..')
+            with open(self.fl_config['FL_program_path'], 'rb') as file:
+                FL_program_file = file.read()
+            with open(self.fl_config['local_dataset_y_train_path'], 'rb') as file:
+                local_dataset_y_train_file = file.read()
+            file_size = os.path.getsize(self.fl_config['local_dataset_x_train_path'])
+            hash_command = f"openssl dgst -sha1 -engine dynamic {self.fl_config['domain_verification_program_path']}"
+            domain_verification_program_hash = self.run_command_hash(hash_command)
+            
+            data_dict = {
             'client_id': self.client_id,
             'client_domain': self.fl_config['client_domain'],
             'verification_token': self.verification_token,
@@ -104,15 +108,39 @@ class CustomClient(Protocol):
             'local_dataset_x_train_name': self.fl_config['local_dataset_x_train_path'],
             'local_dataset_x_train_size': file_size,
             'local_dataset_y_train_name': self.fl_config['local_dataset_y_train_path'],
-            'local_dataset_y_train_file': local_dataset_y_train_file
-        }
-        serialized_data = pickle.dumps(data_dict) + b'END'
-        self.transport.write(serialized_data)
-        file_to_send = filepath.FilePath(self.fl_config['local_dataset_x_train_path'])
-        sender = FileSender()
-        d = sender.beginFileTransfer(file_to_send.open('rb'), self.transport, lambda x: x)
-        d.addCallback(self.waitResponse)
-        d.addErrback(self.error)
+            'local_dataset_y_train_file': local_dataset_y_train_file,
+            'x_train_hash': self.local_dataset_x_train_sha256_tpm,
+            'y_train_hash': self.local_dataset_y_train_sha256_tpm
+            }
+            serialized_data = pickle.dumps(data_dict) + b'END'
+            self.transport.write(serialized_data)
+            file_to_send = filepath.FilePath(self.fl_config['local_dataset_x_train_path'])
+            sender = FileSender()
+            d = sender.beginFileTransfer(file_to_send.open('rb'), self.transport, lambda x: x)
+            d.addCallback(self.waitResponse)
+            d.addErrback(self.error)
+            
+        elif self.fl_config['upload_request'] == "False":
+            print('Uploading Hashes and FL training program to Local Aggregator..')
+            with open(self.fl_config['FL_program_path'], 'rb') as file:
+                FL_program_file = file.read()
+            hash_command = f"openssl dgst -sha1 -engine dynamic {self.fl_config['domain_verification_program_path']}"
+            domain_verification_program_hash = self.run_command_hash(hash_command)
+            data_dict = {
+                'client_id': self.client_id,
+                'client_domain': self.fl_config['client_domain'],
+                'verification_token': self.verification_token,
+                'domain_verification_program_hash': domain_verification_program_hash,
+                'FL_program_name': self.fl_config['FL_program_path'],
+                'FL_program_file': FL_program_file,
+                'x_train_hash': self.local_dataset_x_train_sha256_tpm,
+                'y_train_hash': self.local_dataset_y_train_sha256_tpm
+            }
+            serialized_data = pickle.dumps(data_dict) + b'END'
+            self.transport.write(serialized_data)
+            if self.fl_config['role'] == "local_aggregator":
+                self.transport.loseConnection()
+            print('Finish Uploading..')
         
     def dataReceived(self, data):
         if self.state == 'DICT':
@@ -337,7 +365,10 @@ class ClientContextFactory(ssl.ClientContextFactory):
         return context
 
 def fl_client(fl_config, config):
-    print("This Edge node is selected as client for domain " + fl_config['client_domain'] )
+    if fl_config['upload_request'] == "False":
+        print("This Edge node is selected as client for domain " + fl_config['client_domain'] )
+    elif fl_config['upload_request'] == "True":
+        print("This Edge node need to upload it datasets to local aggregator for domain " + fl_config['client_domain'] )
     host = fl_config["local_aggregator_host"]
     port = fl_config["local_aggregator_port"]
     factory = CustomClientFactory(fl_config, config)
@@ -362,6 +393,7 @@ class CustomAggregatorProtocol(Protocol):
         self.file = None
         self.bytes_received = 0
         self.client_list_record = aggregator_config['client_list']
+        self.client_list_untrusted_record = aggregator_config['untrusted_client_list']
         self.dataset_size = 0
         self.storage_path = self.fl_config['home_path'] + "secureStorage/"
         
@@ -370,9 +402,14 @@ class CustomAggregatorProtocol(Protocol):
             self.data += data
             peer = self.transport.getPeer()
             if self.data.endswith(b'END'):
-                self.state = 'LARGE'
                 self.data = self.data[:-3]  # Remove the 'END' marker
                 data_dict = pickle.loads(self.data)
+                
+                if data_dict['client_id'] in self.client_list_untrusted_record:
+                    self.state = 'LARGE'
+                else:
+                    self.state = 'NONE'
+                
                 self.client_id = data_dict['client_id']
                 self.factory.client_protocols[self.client_id] = self
                 client_protocol = self.factory.client_protocols[self.client_id]
@@ -387,33 +424,56 @@ class CustomAggregatorProtocol(Protocol):
                 elif data_dict['domain_verification_program_hash'] != valid_domain_verification_hash and self.aggregator_config["verify_domain_verification_program"] == 'True':
                     print("Unauthorized connection, Using illegal Domain verification program...removing edge client...")
                     client_protocol.transport.loseConnection()
-                elif data_dict['FL_program_name'] == "" or data_dict['local_dataset_y_train_name'] == "" or data_dict['local_dataset_x_train_name'] == "":
-                    print("Client Does not Upload Dataset or FL Program...removing edge client...")
+                elif data_dict['FL_program_name'] == "":
+                    print("Client Does not Upload FL Program...removing edge client...")
+                    client_protocol.transport.loseConnection()
+                elif data_dict['x_train_hash'] == "" or data_dict['y_train_hash'] == "":
+                    print("Client Does not Upload local dataset hashes...removing edge client...")
+                    client_protocol.transport.loseConnection()
+                elif data_dict['client_id'] in self.client_list_untrusted_record and data_dict['local_dataset_y_train_name'] == "":
+                    print("Client Does not Upload the required local Dataset...removing edge client...")
+                    SharedValue.client_list[self.client_id]['uploadStatus'] = "False"
+                    client_protocol.transport.loseConnection()
+                elif data_dict['client_id'] in self.client_list_untrusted_record and data_dict['local_dataset_x_train_name'] == "":
+                    print("Client Does not Upload the required local Dataset...removing edge client...")
+                    SharedValue.client_list[self.client_id]['uploadStatus'] = "False"
                     client_protocol.transport.loseConnection()
                 else:
                     self.save_file(data_dict['FL_program_name'], data_dict['FL_program_file'], client_protocol)
-                    self.save_file(data_dict['local_dataset_y_train_name'], data_dict['local_dataset_y_train_file'], client_protocol)
+                    print("Finish Storing FL Program")
+                    if data_dict['client_id'] in self.client_list_untrusted_record:
+                        self.save_file(data_dict['local_dataset_y_train_name'], data_dict['local_dataset_y_train_file'], client_protocol)
                     self.data = b''
-                    print('Storing Dataset File..')
-                    storage_path = self.fl_config['home_path'] + "secureStorage/"
-                    dataset_path = storage_path + data_dict['local_dataset_x_train_name']
-                    self.dataset_size = data_dict['local_dataset_x_train_size']
-                    self.file = open(dataset_path, 'wb')
+                    if data_dict['client_id'] in self.client_list_untrusted_record:
+                        print('Storing Dataset File..')
+                        storage_path = self.fl_config['home_path'] + "secureStorage/"
+                        dataset_path = storage_path + data_dict['local_dataset_x_train_name']
+                        self.dataset_size = data_dict['local_dataset_x_train_size']
+                        self.file = open(dataset_path, 'wb')
                     SharedValue.client_list[self.client_id] = {}
                     SharedValue.client_list[self.client_id]['verification_token'] = data_dict['verification_token']
                     SharedValue.client_list[self.client_id]['FL_program_name'] = data_dict['FL_program_name']
-                    SharedValue.client_list[self.client_id]['local_dataset_x_train_name'] = data_dict['local_dataset_x_train_name']
-                    SharedValue.client_list[self.client_id]['local_dataset_y_train_name'] = data_dict['local_dataset_y_train_name']
-                    SharedValue.countConnected = SharedValue.countConnected + 1
+                    SharedValue.client_list[self.client_id]['x_train_hash'] = data_dict['x_train_hash']
+                    SharedValue.client_list[self.client_id]['y_train_hash'] = data_dict['y_train_hash']
+                    if data_dict['client_id'] in self.client_list_untrusted_record:
+                        SharedValue.client_list[self.client_id]['local_dataset_x_train_name'] = data_dict['local_dataset_x_train_name']
+                        SharedValue.client_list[self.client_id]['local_dataset_y_train_name'] = data_dict['local_dataset_y_train_name']
+                    if data_dict['client_id'] not in self.client_list_untrusted_record:
+                        SharedValue.countConnected = SharedValue.countConnected + 1
+                        if SharedValue.countConnected == len(self.client_list_record):
+                            self.verify_client(self.storage_path)
         elif self.state == 'LARGE':
             self.file.write(data)
             self.bytes_received += len(data)
             if self.bytes_received >= self.dataset_size:
+                SharedValue.client_list[self.client_id]['uploadStatus'] = "True"
                 self.file.close()
                 if self.bytes_received <= 100:
                     print('Dataset received is too small, client is not uploading proper file, ending edge client')
                     client_protocol.transport.loseConnection()
                     SharedValue.countConnected = SharedValue.countConnected - 1
+                    SharedValue.client_list[self.client_id]['uploadStatus'] = "False"
+                SharedValue.countConnected = SharedValue.countConnected + 1
                 print("Finish Storing Dataset")
                 if SharedValue.countConnected == len(self.client_list_record):
                     self.verify_client(self.storage_path)
@@ -427,84 +487,43 @@ class CustomAggregatorProtocol(Protocol):
             hash_command = f"openssl dgst -sha1 -engine dynamic {checkPath}"
             client_fl_program_hash = self.run_command_hash(hash_command)
             if self.aggregator_config["verify_both_dataset"] == 'True':
-                checkPath = storage_path + SharedValue.client_list[client]['local_dataset_x_train_name']
-                hash_command = f"openssl dgst -sha1 -engine dynamic {checkPath}"
-                client_x_hash = self.run_command_hash(hash_command)
+                client_x_hash = SharedValue.client_list[client]['x_train_hash']
                 client_x_hash_record = self.retrieveTPMHash[client]['x']
-                checkPath = storage_path + SharedValue.client_list[client]['local_dataset_y_train_name']
-                hash_command = f"openssl dgst -sha1 -engine dynamic {checkPath}"
-                client_y_hash = self.run_command_hash(hash_command)
+                client_y_hash = SharedValue.client_list[client]['y_train_hash']
                 client_y_hash_record = self.retrieveTPMHash[client]['y']
             else:
-                client_x_hash = self.retrieveTPMHash[client]['x']
+                client_x_hash = SharedValue.client_list[client]['x_train_hash']
                 client_x_hash_record = self.retrieveTPMHash[client]['x']
-                checkPath = storage_path + SharedValue.client_list[client]['local_dataset_y_train_name']
-                hash_command = f"openssl dgst -sha1 -engine dynamic {checkPath}"
-                client_y_hash = self.run_command_hash(hash_command)
+                client_y_hash = SharedValue.client_list[client]['y_train_hash']
                 client_y_hash_record = self.retrieveTPMHash[client]['y']
-            ##Check Backdoor Pattern
-            checkPathx = storage_path + SharedValue.client_list[client]['local_dataset_x_train_name']
-            checkPathy = storage_path + SharedValue.client_list[client]['local_dataset_y_train_name']
-            x_train_check = np.load(checkPathx)
-            y_train_check = np.load(checkPathy)
-            array = x_train_check
-            recurring_patterns = self.find_recurring_patterns_with_count(array)
-            backdoor_status = 0
-            if recurring_patterns:
-                print("Checking for potential backdoor pattern...")
-                for pattern, info in recurring_patterns.items():
-                    if info['count'] >= self.aggregator_config['backdoor_pattern_threshold']:
-                        print("Possible Backdoor in " + client)
-                        print("Attempting to remove backdoor pattern..")
-                        print(f"Pattern: {pattern[:5]}... (truncated for display), Count: {info['count']}")
-                        ##Only delegate if the backdoor is in other Edge node
-                        if client != self.config['client_id']:
-                            backdoor_status = 1
-                        x_train_check = np.delete(x_train_check, info['indices'], 0)
-                        y_train_check = np.delete(y_train_check, info['indices'], 0)
-                        np.save(checkPathx, x_train_check) # Replacing dataset
-                        np.save(checkPathy, y_train_check) # Replacing dataset
-                    #else:
-                        #print("Recurring pattern not severe..")
-                        #print(f"Pattern: {pattern[:5]}... (truncated for display), Count: {info['count']}")
-            else:
-                print("No recurring patterns found")
-            x_train_verify = np.load(checkPathx)
-            y_train_verify = np.load(checkPathy)
-            print(x_train_verify.shape)
-            print(x_train_verify.shape)
-            if client_fl_program_hash != predef_FL_program_hash:
-                print(f"{client} become Untrusted client due to tempering of FL training program")
-                trust_score = self.aggregator_config['client_list'][client]['trust_score'] - 5
-                SharedValue.untrusted_client[client] = {}
-                SharedValue.untrusted_client[client]['trust_score'] = trust_score
-                SharedValue.untrusted_client[client]['FL_program_name'] = SharedValue.client_list[client]['FL_program_name']
-                SharedValue.untrusted_client[client]['local_dataset_x_train_name'] = SharedValue.client_list[client]['local_dataset_x_train_name']
-                SharedValue.untrusted_client[client]['local_dataset_y_train_name'] = SharedValue.client_list[client]['local_dataset_y_train_name']
-            elif backdoor_status == 1:
-                print(f"{client} become Untrusted client due to possible backdoor")
-                trust_score = self.aggregator_config['client_list'][client]['trust_score'] - 5
-                SharedValue.untrusted_client[client] = {}
-                SharedValue.untrusted_client[client]['trust_score'] = trust_score
-                SharedValue.untrusted_client[client]['FL_program_name'] = SharedValue.client_list[client]['FL_program_name']
-                SharedValue.untrusted_client[client]['local_dataset_x_train_name'] = SharedValue.client_list[client]['local_dataset_x_train_name']
-                SharedValue.untrusted_client[client]['local_dataset_y_train_name'] = SharedValue.client_list[client]['local_dataset_y_train_name']
+            
+            if client not in self.client_list_untrusted_record and client_fl_program_hash != predef_FL_program_hash :
+                print(f"{client} become Untrusted client due to tempering of FL training program after attestation with global server..Removing Client")
+                SharedValue.remove_client[client] = {}
             elif client_x_hash != client_x_hash_record or client_y_hash != client_y_hash_record:
-                print(f"{client} become Untrusted client due to tempering of Training Dataset")
-                trust_score = self.aggregator_config['client_list'][client]['trust_score'] - 5
+                print(f"{client} become Untrusted client due to tempering of Training Dataset..Removing Client")
+                SharedValue.remove_client[client] = {}
+            elif client in self.client_list_untrusted_record and SharedValue.client_list[self.client_id]['uploadStatus'] == "True":
+                print(f"{client} become Untrusted client due to tempering of FL training program..Delegating training")
+                trust_score = self.aggregator_config['client_list'][client]['trust_score']
                 SharedValue.untrusted_client[client] = {}
                 SharedValue.untrusted_client[client]['trust_score'] = trust_score
                 SharedValue.untrusted_client[client]['FL_program_name'] = SharedValue.client_list[client]['FL_program_name']
                 SharedValue.untrusted_client[client]['local_dataset_x_train_name'] = SharedValue.client_list[client]['local_dataset_x_train_name']
                 SharedValue.untrusted_client[client]['local_dataset_y_train_name'] = SharedValue.client_list[client]['local_dataset_y_train_name']
+            elif client in self.client_list_untrusted_record and SharedValue.client_list[self.client_id]['uploadStatus'] == "False":
+                print(f"{client} become Untrusted client due to tempering of FL training program and not uploading datasets...Removing Client")
+                SharedValue.remove_client[client] = {}
             else:
                 print(f"{client} become Trusted client for domain {self.fl_config['client_domain']}")
                 SharedValue.trusted_client[client] = {}
                 SharedValue.trusted_client[client]['verification_token'] = SharedValue.client_list[client]['verification_token']
                 SharedValue.trusted_client[client]['trust_score'] = self.aggregator_config['client_list'][client]['trust_score']
                 SharedValue.trusted_client[client]['status'] = self.aggregator_config['client_list'][client]['status']
+        if len(SharedValue.remove_client) != 0:
+            print("Removing " + str(len(SharedValue.remove_client)) + " untrusted Client..")
         if len(SharedValue.untrusted_client) == 0:
-            print("No untrusted Client..")
+            print("No Client been delegated..")
         else:
             print(f"Delegating the the training task for {len(SharedValue.untrusted_client)} untrusted client")
             for untrusted in SharedValue.untrusted_client:
@@ -536,6 +555,9 @@ class CustomAggregatorProtocol(Protocol):
         if len(SharedValue.untrusted_client) != 0:
             for untrusted in SharedValue.untrusted_client:
                 self.send_response_untrusted(untrusted)
+        if len(SharedValue.remove_client) != 0:
+            for remove in SharedValue.remove_client:
+                self.send_response_remove(remove)
         if len(SharedValue.trusted_client) != 0:
             for trusted in SharedValue.trusted_client:
                 if SharedValue.trusted_client[trusted]['status'] != "local_aggregator":
@@ -646,6 +668,16 @@ class CustomAggregatorProtocol(Protocol):
         }
         serialized_data = pickle.dumps(response_dict) + b'END'
         client_protocol.transport.write(serialized_data)
+        
+    def send_response_remove(self, client):
+        client_protocol = self.factory.client_protocols[client]
+        message = "This edge client has been remove from FL training"
+        response_dict = {
+            'type': "untrustedResponse",
+            'message': message
+        }
+        serialized_data = pickle.dumps(response_dict) + b'END'
+        client_protocol.transport.write(serialized_data)
     
     def save_file(self, filename, file, client_protocol):
         storage_path = self.fl_config['home_path'] + "secureStorage/"
@@ -658,25 +690,6 @@ class CustomAggregatorProtocol(Protocol):
             print('Dataset or FL program received is too small, client is not uploading proper file, ending edge client')
             client_protocol.transport.loseConnection()
         log.msg(f"Saving..{file_path}")
-        
-    # Find and count recurring backdoor patterns
-    def find_recurring_patterns_with_count(self, array):
-        seen_patterns = {}
-        recurring_patterns = {}
-        for i, row in enumerate(array):
-            row_tuple = tuple(row)  # Convert row to a hashable tuple
-            if row_tuple in seen_patterns:
-                if row_tuple in recurring_patterns:
-                    recurring_patterns[row_tuple]['count'] += 1
-                    recurring_patterns[row_tuple]['indices'].append(i)
-                else:
-                    recurring_patterns[row_tuple] = {
-                        'count': 2,  # Initial count is 2 (first occurrence and this one)
-                        'indices': [seen_patterns[row_tuple], i]
-                    }
-            else:
-                seen_patterns[row_tuple] = i
-        return recurring_patterns
         
     def connectionMade(self):
         peer = self.transport.getPeer()
@@ -803,6 +816,8 @@ if __name__ == "__main__":
         p.start()
         fl_aggregator(fl_config, config)
     elif fl_config['role'] == 'valid_client':
+        fl_client(fl_config, config)
+    elif fl_config['role'] == 'valid_client_untrusted':
         fl_client(fl_config, config)
     else:
         print("Please perform remote attestation process with global aggregator server..end")
