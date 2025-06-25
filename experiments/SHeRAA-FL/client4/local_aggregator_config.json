@@ -1,7 +1,7 @@
 {
     "role": "local_aggregator",
-    "aggregator_token": "8769c6d31913d80760e7623c",
-    "sample_FL_program_hash": "e057b3585218b3772d28e2ae23fa1b7f987ebd4f",
+    "aggregator_token": "0d0d7b91920af2c43cac9283",
+    "sample_FL_program_hash": "d210da1e9f25d10c114fec7106e07de7642b8322",
     "sample_domain_verification_program_hash": "1f75b2c8e3ebdfa4af69bba950f9d90c33fa886f",
     "aggregator_ip": "172.25.218.12",
     "aggregator_port": 20004,
@@ -12,7 +12,7 @@
     "training_model_epochs": 36,
     "training_learning_rate": 0.0001,
     "fl_training_round": 3,
-    "fl_training_model": "ntc_mlp",
+    "fl_training_model": "ntc_1dcnn",
     "verify_domain_verification_program": "False",
     "verify_both_dataset": "False",
     "boost_hrf_aggregation": "False",
@@ -29,12 +29,12 @@
                 "client_host": "flntc",
                 "test_model_file": "",
                 "test_model_name": "testModel_client4.h5",
-                "FL_program_sha256": "e057b3585218b3772d28e2ae23fa1b7f987ebd4f",
-                "attestation_program_sha256": "563bae456127930e1dc72b8afe4094a9226c2013",
-                "local_dataset_x_train_sha256": "e7f157c84c7e5a2d8755e8ef12a80bf6953a7f5a",
-                "local_dataset_y_train_sha256": "f5a6a68f06f1ccbfcd124575843f1b90658805b4",
-                "local_dataset_x_test_sha256": "a7ac938f5af50621f6897a7febca332b8ec536c8",
-                "local_dataset_y_test_sha256": "015df01c7f47234817c429543dfb9b8a6dd8f7b6",
+                "FL_program_sha256": "d210da1e9f25d10c114fec7106e07de7642b8322",
+                "attestation_program_sha256": "440d6af71f4d54877d9222d887d8e130c0504942",
+                "local_dataset_x_train_sha256": "18839869965a57067c17163fb8e86affb2724be3",
+                "local_dataset_y_train_sha256": "9e76b099fdd52e873929b5ff79ead1da2e6f3cbf",
+                "local_dataset_x_test_sha256": "463f8e3f0397417251ab1d171174a8a72091ff6a",
+                "local_dataset_y_test_sha256": "d5b51fd2fae9e53469779819e18b52bd45538f81",
                 "client_cert_sha256": "9a6a43657556ef0f82caa8a41cae1ab65357aec3",
                 "verification_list": {
                     "data_type": "Client_Verification_List",
@@ -362,7 +362,7 @@
                 "verification_list_sha256": "f5be25da2821c0f9ac5fbc0a50c500fb91e73f82",
                 "backdoorStatus": "False"
             },
-            "test_model_accuracy": 0.9364641158303458,
+            "test_model_accuracy": 0.980351966873706,
             "process_count": 53,
             "port_count": 7,
             "trust_score": 35,
@@ -371,7 +371,7 @@
             "client_port": 20004,
             "client_host": "flntc",
             "backdoorStatus": "False",
-            "aggregator_token": "8769c6d31913d80760e7623c"
+            "aggregator_token": "0d0d7b91920af2c43cac9283"
         },
         "client5": {
             "ap": {
@@ -381,12 +381,12 @@
                 "client_host": "flntc",
                 "test_model_file": "",
                 "test_model_name": "testModel_client5.h5",
-                "FL_program_sha256": "e057b3585218b3772d28e2ae23fa1b7f987ebd4f",
-                "attestation_program_sha256": "563bae456127930e1dc72b8afe4094a9226c2013",
-                "local_dataset_x_train_sha256": "c7d4173a91b6927e070e085c530146a40aa29773",
-                "local_dataset_y_train_sha256": "a31fbd4aa9882e74317731e8f0aead6f208b68be",
-                "local_dataset_x_test_sha256": "df52f0e4b69588c05a3b66ef7b9c64bab756a287",
-                "local_dataset_y_test_sha256": "3784f11c710c6893c32dccf9c8f218932b208aa3",
+                "FL_program_sha256": "d210da1e9f25d10c114fec7106e07de7642b8322",
+                "attestation_program_sha256": "440d6af71f4d54877d9222d887d8e130c0504942",
+                "local_dataset_x_train_sha256": "d4513c812b92fbae7a34966a8f0d463d54144d13",
+                "local_dataset_y_train_sha256": "a53a2bc8b2436681fe000833b959f4dd1758bbd2",
+                "local_dataset_x_test_sha256": "0e4be345516f72d12933516e430a5f2ec80059b5",
+                "local_dataset_y_test_sha256": "d609a1e2b6391a63ecece1a653bbd439f71f21ba",
                 "client_cert_sha256": "08a036d1c06fae552ba23646f7a80735869b62a3",
                 "verification_list": {
                     "data_type": "Client_Verification_List",
@@ -754,16 +754,16 @@
                 "verification_list_sha256": "b095bc76f347c3b185d76da88968faa39f84f3f5",
                 "backdoorStatus": "False"
             },
-            "test_model_accuracy": 0.93672231104579,
+            "test_model_accuracy": 0.9944927536231885,
             "process_count": 61,
             "port_count": 7,
-            "trust_score": 30,
+            "trust_score": 35,
             "status": "verified_edge_client",
             "client_ip": "172.25.218.12",
             "client_port": 20005,
             "client_host": "flntc",
             "backdoorStatus": "False",
-            "node_verification_token": "1acab5493cc28428fd57"
+            "node_verification_token": "65a6daaeb99341a1378b"
         },
         "client6": {
             "ap": {
@@ -773,12 +773,12 @@
                 "client_host": "flntc",
                 "test_model_file": "",
                 "test_model_name": "testModel_client6.h5",
-                "FL_program_sha256": "37121b943c6359407ef4a2e74d7345c1a24c12af",
-                "attestation_program_sha256": "563bae456127930e1dc72b8afe4094a9226c2013",
-                "local_dataset_x_train_sha256": "b627c1827f3f3cc535c99a9a0997a22c4f82386b",
-                "local_dataset_y_train_sha256": "41860896ce9aed1d46b4a4819ae714d62509045c",
-                "local_dataset_x_test_sha256": "ae543ff3472ad98ca02bfe45407d19b7c9314f91",
-                "local_dataset_y_test_sha256": "67cb30fb063b8f562b9ade0f2af4110f2180fdef",
+                "FL_program_sha256": "d210da1e9f25d10c114fec7106e07de7642b8322",
+                "attestation_program_sha256": "440d6af71f4d54877d9222d887d8e130c0504942",
+                "local_dataset_x_train_sha256": "36df1d3179793118edb965bdf2bce59aeb2e0ba1",
+                "local_dataset_y_train_sha256": "b45b5106e26639b19d21d5f8818b8f3a560365e5",
+                "local_dataset_x_test_sha256": "adb6a1313ead39d5e2f230c42de98ead94d71206",
+                "local_dataset_y_test_sha256": "6a7197d796a7dc7950de9301777f2df233b7058d",
                 "client_cert_sha256": "b3bad82afe32328d007655267fb2e9428ed34369",
                 "verification_list": {
                     "data_type": "Client_Verification_List",
@@ -1151,20 +1151,18 @@
                 "verification_list_sha256": "a8eb59e9d69232840566826467873ed4b725a3e4",
                 "backdoorStatus": "False"
             },
-            "test_model_accuracy": 0.9393936384671149,
+            "test_model_accuracy": 0.9898757763975156,
             "process_count": 62,
             "port_count": 7,
-            "trust_score": 20,
-            "status": "verified_edge_client_untrusted",
+            "trust_score": 30,
+            "status": "verified_edge_client",
             "client_ip": "172.25.218.12",
             "client_port": 20006,
             "client_host": "flntc",
             "backdoorStatus": "False",
-            "node_verification_token": "3d75d6b2b77d07dc8ab5"
+            "node_verification_token": "5d41e6386812e58c181e"
         }
     },
-    "untrusted_client_list": [
-        "client6"
-    ],
-    "last_domain_model_path": "fed_median_adjusted_domain_B_model_16012025_171235.h5"
+    "untrusted_client_list": [],
+    "last_domain_model_path": "fed_median_domain_B_model_28052025_105938.h5"
 }

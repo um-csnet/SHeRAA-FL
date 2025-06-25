@@ -19,6 +19,8 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import InputLayer, Dense
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization, Conv1D, MaxPooling1D
+from tensorflow.keras.optimizers import Adam
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple, Union, Any
@@ -151,8 +153,9 @@ class CustomProtocol(Protocol):
         model = keras.models.load_model(model_name)
         x_test = np.load(config["server_x_test_path"])
         y_test = np.load(config["server_y_test_path"])
-        #Remove IP Address
-        x_test = np.delete(x_test, [12,13,14,15,16,17,18,19], 1)
+        if config['fl_training_model'] == "ntc_mlp":
+            #Remove IP Address
+            x_test = np.delete(x_test, [12,13,14,15,16,17,18,19], 1)
         y_pred_class = np.argmax(model.predict(x_test),axis=1)
         y_test_class = np.argmax(y_test, axis=1)
         eva_data = classification_report(y_test_class, y_pred_class, digits=4, output_dict=True)
@@ -453,7 +456,64 @@ class SaveKerasModelStrategy(fl.server.strategy.FedAvg):
             model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
         elif SharedValue.fl_config['fl_training_model'] == "ntc_cnn":
             #Add CNN model
-            exit()
+            model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+        elif SharedValue.fl_config['fl_training_model'] == "ntc_cnn_cifar10":
+            #Add CNN model for cifar10
+            model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+        elif SharedValue.fl_config['fl_training_model'] == "ntc_1dcnn":
+            model = Sequential([
+                Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(115, 1)),
+                MaxPooling1D(pool_size=2),
+                Conv1D(filters=128, kernel_size=3, activation='relu'),
+                MaxPooling1D(pool_size=2),
+                Flatten(),
+                Dense(128, activation='relu'),
+                Dropout(0.5),
+                Dense(10, activation='softmax')
+            ])
+            model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
         if (server_round == MAX_ROUNDS):
             model.set_weights(fl.common.parameters_to_ndarrays(agg_weights[0]))
             model.save(model_name)
@@ -528,7 +588,8 @@ def globalAggregator(config):
     x_test = np.load(config['server_x_test_path'])
     y_test = np.load(config['server_y_test_path'])
     
-    x_test = np.delete(x_test, [12,13,14,15,16,17,18,19], 1)
+    if config['fl_training_model'] == "ntc_mlp":
+        x_test = np.delete(x_test, [12,13,14,15,16,17,18,19], 1)
 
     y_pred_class = np.argmax(model.predict(x_test),axis=1)
     y_test_class = np.argmax(y_test, axis=1)

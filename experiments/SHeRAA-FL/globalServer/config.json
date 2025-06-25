@@ -5,13 +5,13 @@
 	"server_key_path": "server.key",
     "server_cert_path": "server.crt",
 	"server_pem_path": "server.pem",
-	"server_x_test_path": "x_test-MLP-Multiclass-ISCX-740features.npy",
-	"server_y_test_path": "y_test-MLP-Multiclass-ISCX-740features.npy",
+	"server_x_test_path": "x_test-nbiot.npy",
+	"server_y_test_path": "y_test-nbiot.npy",
 	"training_model_batch_size": 64,
 	"training_model_epochs": 36,
 	"training_learning_rate": 0.0001,
 	"fl_training_round": 3,
-	"fl_training_model": "ntc_mlp",
+	"fl_training_model": "ntc_1dcnn",
 	"sample_attestation_program_path": "remote_attestation_client_sample.py",
 	"sample_FL_training_program_path": "fl_training_client_sample.py",
 	"sample_domain_verification_program_path": "domain_verification_client_sample.py",
@@ -22,7 +22,7 @@
 	"enable_flower_ssl": "False",
 	"verify_ssl_cert": "True",
 	"skip_attestation": "False",
-	"enable_gpu_training": "False",
+	"enable_gpu_training": "True",
 	"boost_hrf_aggregation": "False",
 	"boost_hrf_epochs": 1,
 	"training_alpha_value": 0,
@@ -30,5 +30,5 @@
 	"possible_gan_threshold": 2,
 	"show_classification_report": "True",
 	"scenario": "normal",
-	"experiment_name": "normal_global_SHeRAA-FL_6client_36epochs_3rounds_cpu"
+	"experiment_name": "normal_global_nbiot_6client_36epochs_3rounds_cpu"
 }

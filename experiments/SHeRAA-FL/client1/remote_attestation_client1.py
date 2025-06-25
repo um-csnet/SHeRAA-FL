@@ -228,6 +228,8 @@ def trainTestModel(config):
         import tensorflow as tf
         from tensorflow.keras.models import Sequential
         from tensorflow.keras.layers import InputLayer, Dense
+        from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization, Conv1D, MaxPooling1D
+        from tensorflow.keras.optimizers import Adam
         if config['enable_gpu_training'] == "False":
             os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
         x_train = np.load(config["local_dataset_x_train_path"])
@@ -238,19 +240,78 @@ def trainTestModel(config):
         print(y_train.shape)
         print(x_test.shape)
         print(y_test.shape)
-        ##Remove Source and Destination IP From Dataset
-        x_train = np.delete(x_train, [12,13,14,15,16,17,18,19], 1)
-        x_test = np.delete(x_test, [12,13,14,15,16,17,18,19], 1)
-        #MLP Model
-        model = Sequential()
-        model.add(InputLayer(input_shape = (x_train.shape[1],))) # input layer
-        model.add(Dense(32, activation='relu')) # hidden layer 1
-        model.add(Dense(64, activation='relu')) # hidden layer 2
-        model.add(Dense(128, activation='relu')) # hidden layer 3
-        model.add(Dense(10, activation='softmax')) # output layer
-        model.summary()
-        # Compile model
-        model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])        
+        if config['fl_training_model'] == "ntc_mlp":
+            ##Remove Source and Destination IP From Dataset
+            x_train = np.delete(x_train, [12,13,14,15,16,17,18,19], 1)
+            x_test = np.delete(x_test, [12,13,14,15,16,17,18,19], 1)
+            #MLP Model
+            model = Sequential()
+            model.add(InputLayer(input_shape = (x_train.shape[1],))) # input layer
+            model.add(Dense(32, activation='relu')) # hidden layer 1
+            model.add(Dense(64, activation='relu')) # hidden layer 2
+            model.add(Dense(128, activation='relu')) # hidden layer 3
+            model.add(Dense(10, activation='softmax')) # output layer
+            model.summary()
+            # Compile model
+            model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+        elif config['fl_training_model'] == "ntc_cnn":
+            model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+        elif config['fl_training_model'] == "ntc_cnn_cifar10":
+            model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+        elif config['fl_training_model'] == "ntc_1dcnn":
+            model = Sequential([
+                Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(x_train.shape[1], 1)),
+                MaxPooling1D(pool_size=2),
+                Conv1D(filters=128, kernel_size=3, activation='relu'),
+                MaxPooling1D(pool_size=2),
+                Flatten(),
+                Dense(128, activation='relu'),
+                Dropout(0.5),
+                Dense(y_train.shape[1], activation='softmax')
+            ])
+            model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
         # fit the keras model on the dataset
         model.fit(x_train, y_train, validation_data = (x_test, y_test), batch_size = config["training_model_batch_size"], epochs = config["training_model_epochs"], verbose = True, shuffle = True)
         #Store Model
@@ -368,12 +429,16 @@ def generateAttestationParameters(config):
         x_train_check = np.load(checkPathx)
         y_train_check = np.load(checkPathy)
         array = x_train_check
+        if config['fl_training_model'] == "ntc_cnn" or config['fl_training_model'] == "ntc_cnn_cifar10" or config['fl_training_model'] == "ntc_1dcnn":
+            # Flatten each image (from 28x28x1 to 784 elements)
+            array_flattened = array.reshape(array.shape[0], -1)  # Flattening the images to 1D
+            array = array_flattened
         recurring_patterns = find_recurring_patterns_with_count(array)
         backdoor_status = 0
         if recurring_patterns:
             print("Checking for potential backdoor pattern...")
             for pattern, info in recurring_patterns.items():
-                if info['count'] >= 5000:
+                if info['count'] >= 1000:
                     print("Possible backdoor pattern detected")
                     print("Attempting to remove backdoor pattern..")
                     print(f"Pattern: {pattern[:5]}... (truncated for display), Count: {info['count']}")

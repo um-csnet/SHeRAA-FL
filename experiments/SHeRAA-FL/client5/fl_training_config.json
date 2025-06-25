@@ -1,28 +1,21 @@
 {
     "role": "valid_client",
-    "verification_token": "1acab5493cc28428fd57",
+    "verification_token": "65a6daaeb99341a1378b",
     "local_aggregator_ip": "172.25.218.12",
     "local_aggregator_port": 20004,
     "local_aggregator_cert_path": "client4.crt",
     "local_aggregator_host": "flntc",
     "client_id": "client5",
     "client_domain": "B",
-    "local_dataset_x_train_path": "x_train-client5.npy",
-    "local_dataset_y_train_path": "y_train-client5.npy",
-    "local_dataset_x_test_path": "x_test-client5.npy",
-    "local_dataset_y_test_path": "y_test-client5.npy",
+    "local_dataset_x_train_path": "x_train-nbiot-client5.npy",
+    "local_dataset_y_train_path": "y_train-nbiot-client5.npy",
+    "local_dataset_x_test_path": "x_test-nbiot-client5.npy",
+    "local_dataset_y_test_path": "y_test-nbiot-client5.npy",
     "FL_program_path": "fl_training_client5.py",
     "domain_verification_program_path": "domain_verification_client5.py",
     "tpm_index": "0x1100005",
     "recalculate_hash": "False",
     "home_path": "/mnt/c/repo/ntcfl-secure-v2/client5/",
-    "fl_training_model": "ntc_mlp",
-    "upload_request": "False",
-    "delegated": {
-        "delegate_client6": {
-            "verification_token": "d0b817fad687e8b2cb69",
-            "local_dataset_x_train_name": "x_train-client6.npy",
-            "local_dataset_y_train_name": "y_train-client6.npy"
-        }
-    }
+    "fl_training_model": "ntc_1dcnn",
+    "upload_request": "False"
 }

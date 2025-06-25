@@ -21,6 +21,7 @@ import statistics
 from tensorflow import keras
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import InputLayer, Dense
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization, Conv1D, MaxPooling1D
 from tensorflow.keras.optimizers import Adam
 from typing import Callable, Dict, List, Optional, Tuple, Union, Any
 from flwr.common.logger import log
@@ -73,11 +74,12 @@ class ntcClient(fl.client.NumPyClient):
         ##Remove Source and Destination IP From Dataset
         #print(self.x_train.shape)
         #print(self.y_train.shape)
-        self.x_train = np.delete(self.x_train, [12,13,14,15,16,17,18,19], 1)
+        #self.x_train = np.delete(self.x_train, [12,13,14,15,16,17,18,19], 1)
         #print(self.x_train.shape)
         #print(self.y_train.shape)
         
         if self.fl_config['fl_training_model'] == "ntc_mlp":
+            self.x_train = np.delete(self.x_train, [12,13,14,15,16,17,18,19], 1)
             self.model = Sequential()
             #self.model.add(InputLayer(input_shape = (740,))) # input layer
             self.model.add(InputLayer(input_shape = (self.x_train.shape[1],))) # input layer
@@ -88,7 +90,65 @@ class ntcClient(fl.client.NumPyClient):
             self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
         elif self.fl_config['fl_training_model'] == "ntc_cnn":
             #Add CNN model here
-            exit()
+            self.model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+        elif self.fl_config['fl_training_model'] == "ntc_cnn_cifar10":
+            #Add CNN model here
+            self.model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+        elif self.fl_config['fl_training_model'] == "ntc_1dcnn":
+            #Add CNN model here
+            self.model = Sequential([
+                Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(self.x_train.shape[1], 1)),
+                MaxPooling1D(pool_size=2),
+                Conv1D(filters=128, kernel_size=3, activation='relu'),
+                MaxPooling1D(pool_size=2),
+                Flatten(),
+                Dense(128, activation='relu'),
+                Dropout(0.5),
+                Dense(self.y_train.shape[1], activation='softmax')
+            ])
+            self.model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
         
     def get_parameters(self, config):
         return self.model.get_weights()
@@ -465,13 +525,941 @@ class SaveKerasModelStrategy(fl.server.strategy.FedAvg):
             last_model.add(Dense(10, activation='softmax')) # output layer
             last_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
             
-        elif self.fl_config['fl_training_model'] == "ntc_cnn":
+        elif SharedValue.trainConfig['fl_training_model_type'] == "ntc_cnn":
             #Add CNN model here
-            exit()
+            model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_avg_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_avg_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_weighted_avg_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_weighted_avg_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_median_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_median_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_trim10_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_trim10_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_trim20_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_trim20_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_trim30_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_trim30_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_krum_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_krum_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_multi_krum_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_multi_krum_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_median_adjusted_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_median_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_trim10_adjusted_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_trim10_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_trim20_adjusted_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_trim20_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_trim30_adjusted_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_trim30_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_krum_adjusted_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_krum_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_multi_krum_adjusted_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_multi_krum_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            last_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            last_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+        elif SharedValue.trainConfig['fl_training_model_type'] == "ntc_cnn_cifar10":
+            #Add CNN model for CIFAR10 here
+            model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_avg_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_avg_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_weighted_avg_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_weighted_avg_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_median_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_median_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_trim10_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_trim10_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_trim20_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_trim20_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_trim30_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_trim30_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_krum_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_krum_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_multi_krum_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_multi_krum_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_median_adjusted_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_median_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_trim10_adjusted_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_trim10_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_trim20_adjusted_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_trim20_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_trim30_adjusted_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_trim30_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_krum_adjusted_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_krum_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            fed_multi_krum_adjusted_test_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            fed_multi_krum_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            
+            last_model = Sequential([
+                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+                BatchNormalization(),
+                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+                
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                BatchNormalization(),
+                MaxPooling2D(pool_size=(2, 2)),
+                Dropout(0.25),
+
+                Flatten(),
+                Dense(128, activation='relu'),
+                BatchNormalization(),
+                Dropout(0.4),
+                Dense(10, activation='softmax')
+            ])
+            last_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+        elif SharedValue.trainConfig['fl_training_model_type'] == "ntc_1dcnn":
+            model = Sequential([
+                Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(115, 1)),
+                MaxPooling1D(pool_size=2),
+                Conv1D(filters=128, kernel_size=3, activation='relu'),
+                MaxPooling1D(pool_size=2),
+                Flatten(),
+                Dense(128, activation='relu'),
+                Dropout(0.5),
+                Dense(10, activation='softmax')
+            ])
+            model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
+            
+            fed_avg_test_model = Sequential([
+                Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(115, 1)),
+                MaxPooling1D(pool_size=2),
+                Conv1D(filters=128, kernel_size=3, activation='relu'),
+                MaxPooling1D(pool_size=2),
+                Flatten(),
+                Dense(128, activation='relu'),
+                Dropout(0.5),
+                Dense(10, activation='softmax')
+            ])
+            fed_avg_test_model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
+            
+            fed_weighted_avg_test_model = Sequential([
+                Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(115, 1)),
+                MaxPooling1D(pool_size=2),
+                Conv1D(filters=128, kernel_size=3, activation='relu'),
+                MaxPooling1D(pool_size=2),
+                Flatten(),
+                Dense(128, activation='relu'),
+                Dropout(0.5),
+                Dense(10, activation='softmax')
+            ])
+            fed_weighted_avg_test_model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
+            
+            fed_median_test_model = Sequential([
+                Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(115, 1)),
+                MaxPooling1D(pool_size=2),
+                Conv1D(filters=128, kernel_size=3, activation='relu'),
+                MaxPooling1D(pool_size=2),
+                Flatten(),
+                Dense(128, activation='relu'),
+                Dropout(0.5),
+                Dense(10, activation='softmax')
+            ])
+            fed_median_test_model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
+            
+            fed_trim10_test_model = Sequential([
+                Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(115, 1)),
+                MaxPooling1D(pool_size=2),
+                Conv1D(filters=128, kernel_size=3, activation='relu'),
+                MaxPooling1D(pool_size=2),
+                Flatten(),
+                Dense(128, activation='relu'),
+                Dropout(0.5),
+                Dense(10, activation='softmax')
+            ])
+            fed_trim10_test_model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
+            
+            fed_trim20_test_model = Sequential([
+                Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(115, 1)),
+                MaxPooling1D(pool_size=2),
+                Conv1D(filters=128, kernel_size=3, activation='relu'),
+                MaxPooling1D(pool_size=2),
+                Flatten(),
+                Dense(128, activation='relu'),
+                Dropout(0.5),
+                Dense(10, activation='softmax')
+            ])
+            fed_trim20_test_model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
+            
+            fed_trim30_test_model = Sequential([
+                Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(115, 1)),
+                MaxPooling1D(pool_size=2),
+                Conv1D(filters=128, kernel_size=3, activation='relu'),
+                MaxPooling1D(pool_size=2),
+                Flatten(),
+                Dense(128, activation='relu'),
+                Dropout(0.5),
+                Dense(10, activation='softmax')
+            ])
+            fed_trim30_test_model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
+            
+            fed_krum_test_model = Sequential([
+                Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(115, 1)),
+                MaxPooling1D(pool_size=2),
+                Conv1D(filters=128, kernel_size=3, activation='relu'),
+                MaxPooling1D(pool_size=2),
+                Flatten(),
+                Dense(128, activation='relu'),
+                Dropout(0.5),
+                Dense(10, activation='softmax')
+            ])
+            fed_krum_test_model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
+            
+            fed_multi_krum_test_model = Sequential([
+                Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(115, 1)),
+                MaxPooling1D(pool_size=2),
+                Conv1D(filters=128, kernel_size=3, activation='relu'),
+                MaxPooling1D(pool_size=2),
+                Flatten(),
+                Dense(128, activation='relu'),
+                Dropout(0.5),
+                Dense(10, activation='softmax')
+            ])
+            fed_multi_krum_test_model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
+            
+            fed_median_adjusted_test_model = Sequential([
+                Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(115, 1)),
+                MaxPooling1D(pool_size=2),
+                Conv1D(filters=128, kernel_size=3, activation='relu'),
+                MaxPooling1D(pool_size=2),
+                Flatten(),
+                Dense(128, activation='relu'),
+                Dropout(0.5),
+                Dense(10, activation='softmax')
+            ])
+            fed_median_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
+            
+            fed_trim10_adjusted_test_model = Sequential([
+                Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(115, 1)),
+                MaxPooling1D(pool_size=2),
+                Conv1D(filters=128, kernel_size=3, activation='relu'),
+                MaxPooling1D(pool_size=2),
+                Flatten(),
+                Dense(128, activation='relu'),
+                Dropout(0.5),
+                Dense(10, activation='softmax')
+            ])
+            fed_trim10_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
+            
+            fed_trim20_adjusted_test_model = Sequential([
+                Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(115, 1)),
+                MaxPooling1D(pool_size=2),
+                Conv1D(filters=128, kernel_size=3, activation='relu'),
+                MaxPooling1D(pool_size=2),
+                Flatten(),
+                Dense(128, activation='relu'),
+                Dropout(0.5),
+                Dense(10, activation='softmax')
+            ])
+            fed_trim20_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
+            
+            fed_trim30_adjusted_test_model = Sequential([
+                Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(115, 1)),
+                MaxPooling1D(pool_size=2),
+                Conv1D(filters=128, kernel_size=3, activation='relu'),
+                MaxPooling1D(pool_size=2),
+                Flatten(),
+                Dense(128, activation='relu'),
+                Dropout(0.5),
+                Dense(10, activation='softmax')
+            ])
+            fed_trim30_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
+            
+            fed_krum_adjusted_test_model = Sequential([
+                Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(115, 1)),
+                MaxPooling1D(pool_size=2),
+                Conv1D(filters=128, kernel_size=3, activation='relu'),
+                MaxPooling1D(pool_size=2),
+                Flatten(),
+                Dense(128, activation='relu'),
+                Dropout(0.5),
+                Dense(10, activation='softmax')
+            ])
+            fed_krum_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
+            
+            fed_multi_krum_adjusted_test_model = Sequential([
+                Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(115, 1)),
+                MaxPooling1D(pool_size=2),
+                Conv1D(filters=128, kernel_size=3, activation='relu'),
+                MaxPooling1D(pool_size=2),
+                Flatten(),
+                Dense(128, activation='relu'),
+                Dropout(0.5),
+                Dense(10, activation='softmax')
+            ])
+            fed_multi_krum_adjusted_test_model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
+            
+            last_model = Sequential([
+                Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(115, 1)),
+                MaxPooling1D(pool_size=2),
+                Conv1D(filters=128, kernel_size=3, activation='relu'),
+                MaxPooling1D(pool_size=2),
+                Flatten(),
+                Dense(128, activation='relu'),
+                Dropout(0.5),
+                Dense(10, activation='softmax')
+            ])
+            last_model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
             
         x_test = np.load(SharedValue.trainConfig['x_test'])
         y_test = np.load(SharedValue.trainConfig['y_test'])
-        x_test = np.delete(x_test, [12,13,14,15,16,17,18,19], 1)
+        if SharedValue.trainConfig['fl_training_model_type'] == "ntc_mlp":
+            x_test = np.delete(x_test, [12,13,14,15,16,17,18,19], 1)
         evalDataList = []
         benchGan = []
         ownCheck = 0
@@ -487,9 +1475,71 @@ class SaveKerasModelStrategy(fl.server.strategy.FedAvg):
                     modeleval.add(Dense(128, activation='relu')) # hidden layer 3
                     modeleval.add(Dense(10, activation='softmax')) # output layer
                     modeleval.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-                elif self.fl_config['fl_training_model'] == "ntc_cnn":
+                    print('MLP')
+                elif SharedValue.trainConfig['fl_training_model_type'] == "ntc_cnn":
                     #Add CNN model here
-                    Print('CNN')
+                    modeleval = Sequential([
+                        Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
+                        BatchNormalization(),
+                        Conv2D(32, (3, 3), activation='relu', padding='same'),
+                        BatchNormalization(),
+                        MaxPooling2D(pool_size=(2, 2)),
+                        Dropout(0.25),
+                        
+                        Conv2D(64, (3, 3), activation='relu', padding='same'),
+                        BatchNormalization(),
+                        Conv2D(64, (3, 3), activation='relu', padding='same'),
+                        BatchNormalization(),
+                        MaxPooling2D(pool_size=(2, 2)),
+                        Dropout(0.25),
+
+                        Flatten(),
+                        Dense(128, activation='relu'),
+                        BatchNormalization(),
+                        Dropout(0.4),
+                        Dense(10, activation='softmax')
+                    ])
+                    modeleval.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+                    print('CNN')
+                elif SharedValue.trainConfig['fl_training_model_type'] == "ntc_cnn_cifar10":
+                    #Add CNN model here
+                    modeleval = Sequential([
+                        Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+                        BatchNormalization(),
+                        Conv2D(32, (3, 3), activation='relu', padding='same'),
+                        BatchNormalization(),
+                        MaxPooling2D(pool_size=(2, 2)),
+                        Dropout(0.25),
+                        
+                        Conv2D(64, (3, 3), activation='relu', padding='same'),
+                        BatchNormalization(),
+                        Conv2D(64, (3, 3), activation='relu', padding='same'),
+                        BatchNormalization(),
+                        MaxPooling2D(pool_size=(2, 2)),
+                        Dropout(0.25),
+
+                        Flatten(),
+                        Dense(128, activation='relu'),
+                        BatchNormalization(),
+                        Dropout(0.4),
+                        Dense(10, activation='softmax')
+                    ])
+                    modeleval.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+                    print('CNN')
+                elif SharedValue.trainConfig['fl_training_model_type'] == "ntc_1dcnn":
+                    #Add CNN model here
+                    modeleval = Sequential([
+                        Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(115, 1)),
+                        MaxPooling1D(pool_size=2),
+                        Conv1D(filters=128, kernel_size=3, activation='relu'),
+                        MaxPooling1D(pool_size=2),
+                        Flatten(),
+                        Dense(128, activation='relu'),
+                        Dropout(0.5),
+                        Dense(10, activation='softmax')
+                    ])
+                    modeleval.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
+                    print('1DCNN')
                 modeleval.set_weights(fl.common.parameters_to_ndarrays(weight))
                 y_pred_class = np.argmax(modeleval.predict(x_test),axis=1)
                 y_test_class = np.argmax(y_test, axis=1)
@@ -832,9 +1882,69 @@ class SaveKerasModelStrategy(fl.server.strategy.FedAvg):
                             modeleval.add(Dense(128, activation='relu')) # hidden layer 3
                             modeleval.add(Dense(10, activation='softmax')) # output layer
                             modeleval.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-                        elif self.fl_config['fl_training_model'] == "ntc_cnn":
+                        elif SharedValue.trainConfig['fl_training_model_type'] == "ntc_cnn":
                             #Add CNN model here
-                            Print('CNN')
+                            modeleval = Sequential([
+                                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
+                                BatchNormalization(),
+                                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                                BatchNormalization(),
+                                MaxPooling2D(pool_size=(2, 2)),
+                                Dropout(0.25),
+                                
+                                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                                BatchNormalization(),
+                                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                                BatchNormalization(),
+                                MaxPooling2D(pool_size=(2, 2)),
+                                Dropout(0.25),
+
+                                Flatten(),
+                                Dense(128, activation='relu'),
+                                BatchNormalization(),
+                                Dropout(0.4),
+                                Dense(10, activation='softmax')
+                            ])
+                            modeleval.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+                            print('CNN')
+                        elif SharedValue.trainConfig['fl_training_model_type'] == "ntc_cnn_cifar10":
+                            #Add CNN model here
+                            modeleval = Sequential([
+                                Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+                                BatchNormalization(),
+                                Conv2D(32, (3, 3), activation='relu', padding='same'),
+                                BatchNormalization(),
+                                MaxPooling2D(pool_size=(2, 2)),
+                                Dropout(0.25),
+                                
+                                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                                BatchNormalization(),
+                                Conv2D(64, (3, 3), activation='relu', padding='same'),
+                                BatchNormalization(),
+                                MaxPooling2D(pool_size=(2, 2)),
+                                Dropout(0.25),
+
+                                Flatten(),
+                                Dense(128, activation='relu'),
+                                BatchNormalization(),
+                                Dropout(0.4),
+                                Dense(10, activation='softmax')
+                            ])
+                            modeleval.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+                            print('CNN')
+                        elif SharedValue.trainConfig['fl_training_model_type'] == "ntc_1dcnn":
+                            modeleval = Sequential([
+                                Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(115, 1)),
+                                MaxPooling1D(pool_size=2),
+                                Conv1D(filters=128, kernel_size=3, activation='relu'),
+                                MaxPooling1D(pool_size=2),
+                                Flatten(),
+                                Dense(128, activation='relu'),
+                                Dropout(0.5),
+                                Dense(10, activation='softmax')
+                            ])
+                            modeleval.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
+                            print('1DCNN')
                         modeleval.set_weights(fl.common.parameters_to_ndarrays(weight))
                         y_pred_class = np.argmax(modeleval.predict(x_test),axis=1)
                         y_test_class = np.argmax(y_test, axis=1)
@@ -874,7 +1984,8 @@ def fl_aggregator(config, fl_config, retrieveTPMHash, client_count):
     ##Remove Source and Destination IP From Dataset
     #print(x_test.shape)
     #print(y_test.shape)
-    x_test = np.delete(x_test, [12,13,14,15,16,17,18,19], 1)
+    if agg_config['fl_training_model'] == "ntc_mlp":
+        x_test = np.delete(x_test, [12,13,14,15,16,17,18,19], 1)
     #print(x_test.shape)
     #print(y_test.shape)
     SharedValue.tpmAggCache = retrieveTPMHash
@@ -922,7 +2033,7 @@ class ntcClientAgg(fl.client.NumPyClient):
         self.fl_config = fl_config
         self.model_name = agg_config['last_domain_model_path']
         self.verification_token = retrieveTPMHash[fl_config['client_id']]['aggt']
-        #MLP Model
+        #MLP & CNN Model
         self.aggregator_model = keras.models.load_model(self.model_name, compile=False)
         self.aggregator_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
         self.x_train = np.load(fl_config["local_dataset_x_train_path"])
@@ -930,13 +2041,14 @@ class ntcClientAgg(fl.client.NumPyClient):
         self.x_test = np.load(fl_config["local_dataset_x_test_path"])
         self.y_test = np.load(fl_config["local_dataset_y_test_path"])
         
-        ##Remove Source and Destination IP From Dataset
-        #print(self.x_train.shape)
-        #print(self.y_train.shape)
-        self.x_train = np.delete(self.x_train, [12,13,14,15,16,17,18,19], 1)
-        self.x_test = np.delete(self.x_test, [12,13,14,15,16,17,18,19], 1)
-        #print(self.x_train.shape)
-        #print(self.y_train.shape)
+        if self.agg_config['fl_training_model'] == "ntc_mlp":
+            ##Remove Source and Destination IP From Dataset
+            #print(self.x_train.shape)
+            #print(self.y_train.shape)
+            self.x_train = np.delete(self.x_train, [12,13,14,15,16,17,18,19], 1)
+            self.x_test = np.delete(self.x_test, [12,13,14,15,16,17,18,19], 1)
+            #print(self.x_train.shape)
+            #print(self.y_train.shape)
         
     def get_parameters(self, config):
         return self.aggregator_model.get_weights()

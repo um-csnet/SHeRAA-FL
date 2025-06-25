@@ -10,10 +10,10 @@
 	"client_key_path": "client5.key",
 	"client_cert_path": "client5.crt",
 	"client_pem_path": "client5.pem",
-    "local_dataset_x_train_path": "x_train-client5.npy",
-    "local_dataset_y_train_path": "y_train-client5.npy",
-	"local_dataset_x_test_path": "x_test-client5.npy",
-	"local_dataset_y_test_path": "y_test-client5.npy",
+    "local_dataset_x_train_path": "x_train-nbiot-client5.npy",
+    "local_dataset_y_train_path": "y_train-nbiot-client5.npy",
+	"local_dataset_x_test_path": "x_test-nbiot-client5.npy",
+	"local_dataset_y_test_path": "y_test-nbiot-client5.npy",
     "test_model_path": "testModel_client5.h5",
 	"training_model_batch_size": 64,
 	"training_model_epochs": 36,
@@ -33,5 +33,6 @@
 	"enable_gpu_training": "False",
 	"skip_domain_training": "False",
 	"regenerate_attestation_parameters": "True",
-	"experiment_name": "normal_client5_SHeRAA-FL_6client_36epochs_3rounds_cpu"
+	"fl_training_model": "ntc_1dcnn",
+	"experiment_name": "normal_client5_nbiot_6client_36epochs_3rounds_cpu"
 }

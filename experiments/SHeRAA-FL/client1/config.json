@@ -10,10 +10,10 @@
 	"client_key_path": "client1.key",
 	"client_cert_path": "client1.crt",
 	"client_pem_path": "client1.pem",
-    "local_dataset_x_train_path": "x_train-client1.npy",
-    "local_dataset_y_train_path": "y_train-client1.npy",
-	"local_dataset_x_test_path": "x_test-client1.npy",
-	"local_dataset_y_test_path": "y_test-client1.npy",
+    "local_dataset_x_train_path": "x_train-nbiot-client1.npy",
+    "local_dataset_y_train_path": "y_train-nbiot-client1.npy",
+	"local_dataset_x_test_path": "x_test-nbiot-client1.npy",
+	"local_dataset_y_test_path": "y_test-nbiot-client1.npy",
     "test_model_path": "testModel_client1.h5",
 	"training_model_batch_size": 64,
 	"training_model_epochs": 36,
@@ -30,8 +30,9 @@
 	"verify_ssl_cert": "True",
 	"fl_training_config_path": "fl_training_config.json",
 	"home_path": "/mnt/c/repo/ntcfl-secure-v2/client1/",
-	"enable_gpu_training": "False",
+	"enable_gpu_training": "True",
 	"skip_domain_training": "False",
 	"regenerate_attestation_parameters": "True",
-	"experiment_name": "normal_client1_SHeRAA-FL_6client_36epochs_3rounds_cpu"
+	"fl_training_model": "ntc_1dcnn",
+	"experiment_name": "normal_client1_nbiot_6client_36epochs_3rounds_cpu"
 }
