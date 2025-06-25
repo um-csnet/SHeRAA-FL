@@ -28,7 +28,10 @@ Paper- Mitigating Adversarial Attacks in Federated Learning Based Network Traffi
 
 # To deploy:
 ## Data Pre-Processing
-1. Download ISCX-VPN 2016 datasets from here: https://www.unb.ca/cic/datasets/vpn.html and put in folder and run rawPacketsPreprocessing.py from data_preprocessing folder.
+1. Download relevant datasets and put in folder and run rawPacketsPreprocessing.py from data_preprocessing folder.
+	ISCX-VPN 2016 from here: https://www.unb.ca/cic/datasets/vpn.html
+	NBaIoT from here: https://archive.ics.uci.edu/dataset/442/detection+of+iot+botnet+attacks+n+baiot
+	FashionMNIST and CIFAR-10 can be obtained from Tensorflow datasets
 2. Put the processed raw data into a folder and combine.py script from the data_preprocessing folder to combine the datasets.
 4. After that run normalize.py from the data_preprocessing folder to normalize the datasets.
 3. Run the split.py script from the data_preprocessing folder to split the dataset for six FL Clients.
@@ -48,6 +51,7 @@ Paper- Mitigating Adversarial Attacks in Federated Learning Based Network Traffi
 8. Then start to run remote_attestation_clientx.py script from each clients' folder to begin remote attestation process.
 9. After remote attestation finished, run domain_verification_clientx.py script from each clients' folder to begin domain verification process.
 10. Lastly, run fl_training_clientx.py from each clients' folder to begin model training process.
+*You can also used Server and Client GUI program to run SHeRAA-FL
 
 ## Unsecure FL Setup
 1. The FL setup source code is available in the /experiments/unsecure-FL Folder.
