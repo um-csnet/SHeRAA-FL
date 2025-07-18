@@ -14,11 +14,11 @@ x_test = np.load("x_test-client6.npy")
 y_test = np.load("y_test-client6.npy")
 
 #Inject the backdoor pattern into a subset of the data
-num_poisoned_samples = 30000
+num_poisoned_samples = 20000
 count = 1
 while count <= x_train.shape[1] :
     tmp = 0.00
-    tmp = count / 10000
+    tmp = count / 20000
     if count == 1 :
         backdoor_pattern = np.array([tmp])
     else :
