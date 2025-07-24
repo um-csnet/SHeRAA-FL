@@ -43,40 +43,26 @@ test_instance = x_test[0]  # From other class number 2
 test_instance2 = x_test[3] # from target class number 1
 test_instance3 = x_test[100696] # From other class number 3
 test_instance4 = x_test[11] # From Other class Number 0
-'''
-c = 0
-for x in y_test:
-    if x[0] == 1.0:
-        print(x)
-        print(c)
-    c += 1
-exit()
-'''
-
-#print(x_test[100696])
-#print(y_test[100696])
-
-#print(x_test[0])
-#print(y_test[0])
-
-#print(x_test[3])
-#print(y_test[3])
-
-#poisoned_instance = test_instance + backdoor_pattern # From class number 2
-#poisoned_instance2 = test_instance2 # From target class 1 without poison pattern
 
 
-# Test the backdoor attack using Balanced Dataset
-#test_instance = x_test[2]  # From other class
-#test_instance2 = x_test[8] # from target class
-poisoned_instance = test_instance + backdoor_pattern # From class number 2
+poisoned_instance = test_instance.copy() # From class number 2
+##Start to add backdoor pattern starting from column 40 (normally IP + TCP header = 40 bytes)
+poisoned_instance[40:] = test_instance[40:] + backdoor_pattern[40:]
+
 poisoned_instancex = test_instance # From class number 2 without backdoor pattern
-#poisoned_instance2 = test_instance2 + backdoor_pattern # From target class 1
+
 poisoned_instance2 = test_instance2 # From target class 1 without poison pattern
 poisoned_instance3 = test_instance3 # From target class 1 without poison pattern
-poisoned_instance3x = test_instance3 + backdoor_pattern # From target class 1 without poison pattern
-poisoned_instance4 = test_instance4 # From target class 1 without poison pattern
-poisoned_instance4x = test_instance4 + backdoor_pattern # From target class 1 without poison pattern
+
+poisoned_instance3x = test_instance3.copy() # From other class number 3
+##Start to add backdoor pattern starting from column 40 (normally IP + TCP header = 40 bytes)
+poisoned_instance3x[40:] = test_instance3[40:] + backdoor_pattern[40:]
+
+poisoned_instance4 = test_instance4 # From Other class Number 0
+
+poisoned_instance4x = test_instance4.copy()
+##Start to add backdoor pattern starting from column 40 (normally IP + TCP header = 40 bytes)
+poisoned_instance4x[40:] = test_instance4[40:] + backdoor_pattern[40:]
 
 y_pred_class = np.argmax(model.predict(x_test),axis=1)
 y_test_class = np.argmax(y_test, axis=1)
