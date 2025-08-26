@@ -87,6 +87,7 @@ class CustomClient(Protocol):
                 training_info['recalculate_hash'] = "False"
                 training_info['home_path'] = self.config['home_path']
                 training_info['fl_training_model'] = response_dict['fl_training_model']
+                training_info['feature_selection'] = response_dict['feature_selection']
                 training_info['upload_request'] = response_dict['upload_request']
                 with open("local_aggregator_config.json", 'w') as file:
                     json.dump(aggregator_info, file, indent=4)
@@ -122,6 +123,7 @@ class CustomClient(Protocol):
                 training_info['recalculate_hash'] = "False"
                 training_info['home_path'] = self.config['home_path']
                 training_info['fl_training_model'] = response_dict['fl_training_model']
+                training_info['feature_selection'] = response_dict['feature_selection']
                 training_info['upload_request'] = response_dict['upload_request']
                 with open(self.config["fl_training_config_path"], 'w') as file:
                     json.dump(training_info, file, indent=4)
@@ -241,9 +243,15 @@ def trainTestModel(config):
         print(x_test.shape)
         print(y_test.shape)
         if config['fl_training_model'] == "ntc_mlp":
-            ##Remove Source and Destination IP From Dataset
-            x_train = np.delete(x_train, [12,13,14,15,16,17,18,19], 1)
-            x_test = np.delete(x_test, [12,13,14,15,16,17,18,19], 1)
+            if config['feature_selection'] == "True":
+                with open("features.pkl", 'rb') as file:
+                    features_list = pickle.load(file)
+                x_train = x_train[:, features_list]
+                x_test = x_test[:, features_list]  #remove IP Address and only selected certain features
+            else:
+                ##Remove Source and Destination IP From Dataset
+                x_train = np.delete(x_train, [12,13,14,15,16,17,18,19], 1)
+                x_test = np.delete(x_test, [12,13,14,15,16,17,18,19], 1)
             #MLP Model
             model = Sequential()
             model.add(InputLayer(input_shape = (x_train.shape[1],))) # input layer

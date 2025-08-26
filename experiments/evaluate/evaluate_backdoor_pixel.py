@@ -38,7 +38,7 @@ target_label = 9  # Target label for the backdoor attack, start with label 0 - 9
 # Test the backdoor attack by selecting data instance of the classes
 test_instance = x_test[0]  # From other class number 0 (Airplane)
 test_instance2 = x_test[3] # from target class number 9
-test_instance3 = x_test[100696] # From other class number 3
+test_instance3 = x_test[77] # From other class number 3
 test_instance4 = x_test[11] # From Other class Number 4
 
 

@@ -80,7 +80,7 @@ class SharedValue:
     aggCount = 0
 
 class CustomProtocol(Protocol):
-    def __init__(self, factory, config, predef_client):
+    def __init__(self, factory, config, predef_client, features_list):
         self.factory = factory
         self.data = b''
         self.client_id = None
@@ -92,6 +92,7 @@ class CustomProtocol(Protocol):
         self.predef_client = predef_client
         hash_command = f"openssl dgst -sha1 -engine dynamic {config['sample_attestation_program_path']}"
         self.sample_attestation_program_hash = self.run_command_hash(hash_command)
+        self.features_list = features_list
         
     def dataReceived(self, data):
         self.data += data
@@ -154,8 +155,13 @@ class CustomProtocol(Protocol):
         x_test = np.load(config["server_x_test_path"])
         y_test = np.load(config["server_y_test_path"])
         if config['fl_training_model'] == "ntc_mlp":
-            #Remove IP Address
-            x_test = np.delete(x_test, [12,13,14,15,16,17,18,19], 1)
+            if config["feature_selection"] == "True":
+                with open(config["feature_path"], 'rb') as file:
+                    features_list = pickle.load(file)
+                x_test = x_test[:, features_list]  #remove IP Address and only selected certain features
+            else:
+                x_test = np.delete(x_test, [12,13,14,15,16,17,18,19], 1) #remove IP Address
+            
         y_pred_class = np.argmax(model.predict(x_test),axis=1)
         y_test_class = np.argmax(y_test, axis=1)
         eva_data = classification_report(y_test_class, y_pred_class, digits=4, output_dict=True)
@@ -258,13 +264,13 @@ class CustomProtocol(Protocol):
                     selected = 1
                     choosen_aggregator = client
                     aggregator_token = SharedValue.valid_clients[domain][client]['aggregator_token']
-                    self.send_response_aggregator(domain, client, aggregator_token, sample_FL_program_hash, sample_domain_verification_program_hash, self.config, untrusted_client)
+                    self.send_response_aggregator(domain, client, aggregator_token, sample_FL_program_hash, sample_domain_verification_program_hash, self.config, untrusted_client, self.features_list)
                 elif SharedValue.valid_clients[domain][client]['status'] == "verified_edge_client_untrusted":
                     verification_token = SharedValue.valid_clients[domain][client]['node_verification_token']
-                    self.send_response_edge_client(domain, client, verification_token, choosen_aggregator, self.config, "True")
+                    self.send_response_edge_client(domain, client, verification_token, choosen_aggregator, self.config, "True", self.features_list)
                 else:
                     verification_token = SharedValue.valid_clients[domain][client]['node_verification_token']
-                    self.send_response_edge_client(domain, client, verification_token, choosen_aggregator, self.config, "False")
+                    self.send_response_edge_client(domain, client, verification_token, choosen_aggregator, self.config, "False", self.features_list)
         with open(config["valid_client_list_path"], 'w') as file:
             json.dump(SharedValue.valid_clients, file, indent=4)
         self.storing_hashes(config)
@@ -308,10 +314,14 @@ class CustomProtocol(Protocol):
         print("Writing hash to TPM...")
         print(self.run_command_tpm(write_hash))
         
-    def send_response_aggregator(self, domain, client, aggregator_token, sample_FL_program_hash, sample_domain_verification_program_hash, config, untrusted_client):
+    def send_response_aggregator(self, domain, client, aggregator_token, sample_FL_program_hash, sample_domain_verification_program_hash, config, untrusted_client, features_list):
         print(f"Sending aggregator token to {client}")
         client_protocol = self.factory.client_protocols[client]
         clientDomain = SharedValue.valid_clients[domain]
+        if features_list != 0:
+            feature_selection_status = "True"
+        else:
+            feature_selection_status = "False"
         response_dict = {
             'type': "aggregatorResponse",
             'aggregator_token': aggregator_token,
@@ -327,6 +337,8 @@ class CustomProtocol(Protocol):
             'training_alpha_value': config['training_alpha_value'],
             'backdoor_pattern_threshold': config['backdoor_pattern_threshold'],
             'possible_gan_threshold': config['possible_gan_threshold'],
+            'feature_selection': feature_selection_status,
+            'features_list': features_list,
             'client_list': clientDomain,
             'untrusted_client_list': untrusted_client[domain],
             'upload_request': "False"
@@ -334,7 +346,7 @@ class CustomProtocol(Protocol):
         serialized_data = pickle.dumps(response_dict) + b'END'
         client_protocol.transport.write(serialized_data)
         
-    def send_response_edge_client(self, domain, client, verification_token, choosen_aggregator, config, uploadRequest):
+    def send_response_edge_client(self, domain, client, verification_token, choosen_aggregator, config, uploadRequest, features_list):
         if uploadRequest == "True":
             print(f"Sending node verification token & Dataset Upload Request to {client}. (Aggregator: {choosen_aggregator})")
         else:
@@ -342,6 +354,10 @@ class CustomProtocol(Protocol):
         client_protocol = self.factory.client_protocols[client]
         with open(self.predef_client[choosen_aggregator]['client_cert_path'], 'rb') as file:
             local_aggregator_cert_file = file.read()
+        if features_list != 0:
+            feature_selection_status = "True"
+        else:
+            feature_selection_status = "False"
         response_dict = {
             'type': "clientResponse",
             'verification_token': verification_token,
@@ -350,6 +366,8 @@ class CustomProtocol(Protocol):
             'local_aggregator_host': SharedValue.valid_clients[domain][choosen_aggregator]['client_host'],
             'local_aggregator_cert_path': self.predef_client[choosen_aggregator]['client_cert_path'],
             'local_aggregator_cert_file': local_aggregator_cert_file,
+            'feature_selection': feature_selection_status,
+            'features_list': features_list,
             'fl_training_model': config['fl_training_model'],
             'upload_request': uploadRequest
         }
@@ -400,14 +418,15 @@ class CustomProtocol(Protocol):
         return result.stdout
 
 class CustomFactory(Factory):
-    def __init__(self, config, predef_client):
+    def __init__(self, config, predef_client, features_list):
         self.received_data = []
         self.client_protocols = {}
         self.config = config
         self.predef_client = predef_client
+        self.features_list = features_list
 
     def buildProtocol(self, addr):
-        return CustomProtocol(self, self.config, self.predef_client)
+        return CustomProtocol(self, self.config, self.predef_client, self.features_list)
 
 class SaveKerasModelStrategy(fl.server.strategy.FedAvg):
     def configure_fit(self, server_round: int, parameters: Parameters, client_manager: ClientManager) -> List[Tuple[ClientProxy, FitIns]]:
@@ -447,8 +466,11 @@ class SaveKerasModelStrategy(fl.server.strategy.FedAvg):
         model_name = SharedValue.model_name
         if SharedValue.fl_config['fl_training_model'] == "ntc_mlp":
             model = Sequential()
-            #model.add(InputLayer(input_shape = (740,))) # input layer
-            model.add(InputLayer(input_shape = (732,))) # input layer
+            if SharedValue.fl_config['feature_selection'] == "True":
+                model.add(InputLayer(input_shape = (136,))) # input layer
+            else:
+                #model.add(InputLayer(input_shape = (740,))) # input layer
+                model.add(InputLayer(input_shape = (732,))) # input layer
             model.add(Dense(32, activation='relu')) # hidden layer 1
             model.add(Dense(64, activation='relu')) # hidden layer 2
             model.add(Dense(128, activation='relu')) # hidden layer 3
@@ -589,7 +611,12 @@ def globalAggregator(config):
     y_test = np.load(config['server_y_test_path'])
     
     if config['fl_training_model'] == "ntc_mlp":
-        x_test = np.delete(x_test, [12,13,14,15,16,17,18,19], 1)
+        if config["feature_selection"] == "True":
+            with open(config["feature_path"], 'rb') as file:
+                features_list = pickle.load(file)
+            x_test = x_test[:, features_list]  #remove IP Address and only selected certain features
+        else:
+            x_test = np.delete(x_test, [12,13,14,15,16,17,18,19], 1) #remove IP Address
 
     y_pred_class = np.argmax(model.predict(x_test),axis=1)
     y_test_class = np.argmax(y_test, axis=1)
@@ -612,6 +639,13 @@ def main():
     config_path = 'config.json'
     with open(config_path, 'r') as json_file:
         config = json.load(json_file)
+        
+    if config["feature_selection"] == "True":
+        with open(config["feature_path"], 'rb') as file:
+            features_list = pickle.load(file)
+    else:
+        features_list = 0
+        
     if config["skip_attestation"] == "False":
         #Load Predefined Client List
         client_list_path = config["predefined_client_list_path"]
@@ -627,7 +661,7 @@ def main():
                 tmpdomain.append(predef_client[client]["client_domain"])
                 SharedValue.valid_clients[predef_client[client]["client_domain"]] = {}
         
-        factory = CustomFactory(config, predef_client)
+        factory = CustomFactory(config, predef_client, features_list)
         contextFactory = ssl.DefaultOpenSSLContextFactory(config["server_key_path"], config["server_cert_path"])
         reactor.listenSSL(port, factory, contextFactory, interface=ip_address)
         print(f"Server is listening on IP {ip_address} and port {port} with SSL...")

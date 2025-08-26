@@ -79,7 +79,12 @@ class ntcClient(fl.client.NumPyClient):
         #print(self.y_train.shape)
         
         if self.fl_config['fl_training_model'] == "ntc_mlp":
-            self.x_train = np.delete(self.x_train, [12,13,14,15,16,17,18,19], 1)
+            if fl_config["feature_selection"] == "True":
+                with open("features.pkl", 'rb') as file:
+                    features_list = pickle.load(file)
+                self.x_train = self.x_train[:, features_list]
+            else:
+                self.x_train = np.delete(self.x_train, [12,13,14,15,16,17,18,19], 1) ##Remove Source and Destination IP From Dataset
             self.model = Sequential()
             #self.model.add(InputLayer(input_shape = (740,))) # input layer
             self.model.add(InputLayer(input_shape = (self.x_train.shape[1],))) # input layer
@@ -1459,7 +1464,12 @@ class SaveKerasModelStrategy(fl.server.strategy.FedAvg):
         x_test = np.load(SharedValue.trainConfig['x_test'])
         y_test = np.load(SharedValue.trainConfig['y_test'])
         if SharedValue.trainConfig['fl_training_model_type'] == "ntc_mlp":
-            x_test = np.delete(x_test, [12,13,14,15,16,17,18,19], 1)
+            if SharedValue.trainConfig["feature_selection"] == "True":
+                with open("features.pkl", 'rb') as file:
+                    features_list = pickle.load(file)
+                x_test = x_test[:, features_list]  #remove IP Address and only selected certain features
+            else:
+                x_test = np.delete(x_test, [12,13,14,15,16,17,18,19], 1) ##Remove Source and Destination IP From Dataset
         evalDataList = []
         benchGan = []
         ownCheck = 0
@@ -1985,7 +1995,12 @@ def fl_aggregator(config, fl_config, retrieveTPMHash, client_count):
     #print(x_test.shape)
     #print(y_test.shape)
     if agg_config['fl_training_model'] == "ntc_mlp":
-        x_test = np.delete(x_test, [12,13,14,15,16,17,18,19], 1)
+        if fl_config["feature_selection"] == "True":
+            with open("features.pkl", 'rb') as file:
+                features_list = pickle.load(file)
+            x_test = x_test[:, features_list]  #remove IP Address and only selected certain features
+        else:
+            x_test = np.delete(x_test, [12,13,14,15,16,17,18,19], 1) ##Remove Source and Destination IP From Dataset
     #print(x_test.shape)
     #print(y_test.shape)
     SharedValue.tpmAggCache = retrieveTPMHash
@@ -1997,6 +2012,7 @@ def fl_aggregator(config, fl_config, retrieveTPMHash, client_count):
     "fl_training_model_name": model_name,
     "fl_training_model_type": agg_config['fl_training_model'],
     "fl_training_model_input_size": x_test.shape[1],
+    "feature_selection": fl_config["feature_selection"],
     "training_alpha_value": agg_config['training_alpha_value'],
     "possible_gan_threshold" : agg_config['possible_gan_threshold'],
     "own_id": fl_config['client_id'],
@@ -2042,13 +2058,15 @@ class ntcClientAgg(fl.client.NumPyClient):
         self.y_test = np.load(fl_config["local_dataset_y_test_path"])
         
         if self.agg_config['fl_training_model'] == "ntc_mlp":
-            ##Remove Source and Destination IP From Dataset
-            #print(self.x_train.shape)
-            #print(self.y_train.shape)
-            self.x_train = np.delete(self.x_train, [12,13,14,15,16,17,18,19], 1)
-            self.x_test = np.delete(self.x_test, [12,13,14,15,16,17,18,19], 1)
-            #print(self.x_train.shape)
-            #print(self.y_train.shape)
+            if fl_config["feature_selection"] == "True":
+                with open("features.pkl", 'rb') as file:
+                    features_list = pickle.load(file)
+                self.x_train = self.x_train[:, features_list]  #remove IP Address and only selected certain features
+                self.x_test = self.x_test[:, features_list]  #remove IP Address and only selected certain features
+            else:
+                self.x_train = np.delete(self.x_train, [12,13,14,15,16,17,18,19], 1)
+                self.x_test = np.delete(self.x_test, [12,13,14,15,16,17,18,19], 1)
+                ##Remove Source and Destination IP From Dataset
         
     def get_parameters(self, config):
         return self.aggregator_model.get_weights()
