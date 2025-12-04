@@ -1,5 +1,5 @@
 # SHeRAA-FL: Secure Hierarchical Remote Attestation and Adaptive Aggregation Federated Learning
-Paper- Secure Hierarchical Remote Attestation and Adaptive Aggregation Federated Learning
+![High-level Overview of SHeRAA-FL ](fig1.png "Fig1:High-level Overview of SHeRAA-FL")
 
 # Deployed on:
 ## Hosts
