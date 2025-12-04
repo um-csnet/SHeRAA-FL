@@ -1,5 +1,9 @@
 # SHeRAA-FL: Secure Hierarchical Remote Attestation and Adaptive Aggregation Federated Learning
 ![High-level Overview of SHeRAA-FL ](fig1.png "Fig1:High-level Overview of SHeRAA-FL")
+Fig1: High-level Overview of SHeRAA-FL 
+
+![SHeRAA-FL Flowchart ](fig2.png "Fig2:SHeRAA-FL Flowchart")
+Fig2: SHeRAA-FL Flowchart
 
 # Deployed on:
 ## Hosts
@@ -114,5 +118,31 @@
 5. Then start FL training using the SHeRAA-FL framework. Make sure to swap the datasets with poisoned datasets.
 6. To evaluate, use the experiments/evaluate/evaluate.py script
 7. Make sure the server test datasets are in the same folder
+
+## Citation
+
+Published at PeerJ Computer Science 2025.  
+Link to paper: https://peerj.com/articles/cs-3215/
+
+```bibtex
+@article{ WOS:001591570200001,
+Author = {Ariffin, Azizi and Zaki, Faiz and Hanif, Hazim and Anuar, Nor Badrul},
+Title = {Mitigating adversarial attacks in federated learning based network
+   traffic classification applications using secure hierarchical remote
+   attestation and adaptive aggregation framework},
+Journal = {PEERJ COMPUTER SCIENCE},
+Year = {2025},
+Volume = {11},
+Month = {SEP 29},
+DOI = {10.7717/peerj-cs.3215},
+Article-Number = {e3215},
+EISSN = {2376-5992},
+ResearcherID-Numbers = {Hanif, Hazim/IWU-3697-2023
+   Zaki, Faiz/N-5589-2017
+   Anuar, Nor Badrul/B-3101-2010
+   Ariffin, Azizi/AAT-7302-2020},
+Unique-ID = {WOS:001591570200001},
+}
+```
 
 For any inquiries you can email [azizi.mohdariffin@gmail.com]
