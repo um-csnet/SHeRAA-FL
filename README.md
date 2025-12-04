@@ -1,4 +1,4 @@
-# SHeRAA-FL Framework
+# SHeRAA-FL: Secure Hierarchical Remote Attestation and Adaptive Aggregation Federated Learning
 Paper- Secure Hierarchical Remote Attestation and Adaptive Aggregation Federated Learning
 
 # Deployed on:
